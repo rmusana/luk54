@@ -1,0 +1,8 @@
+# deps
+node_modules/
+dist/
+
+# env — never commit real keys
+.env
+.env.local
+.vercel
