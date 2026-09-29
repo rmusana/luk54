@@ -3,21 +3,22 @@ import { supabase } from '../lib/supabaseClient.js';
 import { financialSummary, isCommercial } from '../lib/finance.js';
 import { useToast } from '../components/ui.jsx';
 import { CapitalSec, ExpensesSec, SummarySec } from './finance/Core.jsx';
-import { AllocationSec, BudgetSec, CashflowSec, ProfitSec } from './finance/Sections.jsx';
+import { AllocationSec, CashflowSec, ProfitSec, RevenueSec } from './finance/Sections.jsx';
 
 const SUBS = [
-  { id: 'summary', label: 'Summary' },
+  { id: 'overview', label: 'Overview' },
   { id: 'capital', label: 'Disbursements' },
+  { id: 'revenue', label: 'Revenue' },
   { id: 'expenses', label: 'Expenses' },
-  { id: 'budget', label: 'Budget' },
-  { id: 'allocation', label: 'Allocation' },
-  { id: 'profit', label: 'Profit' },
+  { id: 'allocation', label: 'Revenue Allocation' },
+  { id: 'profit', label: 'Profit Distribution' },
   { id: 'cashflow', label: 'Cash Flow' },
 ];
 
 export default function Finance({ role, setActions }) {
   const toast = useToast();
-  const [sub, setSub] = useState('summary');
+  const [sub, setSub] = useState('overview');
+  const [capSignal, setCapSignal] = useState(0);
   const [data, setData] = useState({ capital: [], expenses: [], sales: [], budget: [], allocations: [], distributions: [], daily: [], commercial: false, summary: null });
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +52,7 @@ export default function Finance({ role, setActions }) {
 
   return (
     <>
-      <div className="tabs-bar">
+      <div className="pill-tabs">
         {SUBS.map((s) => (
           <button key={s.id} className={'btn btn-sm ' + (s.id === sub ? 'btn-primary' : 'btn-ghost')}
             onClick={() => { setActions(null); setSub(s.id); }}>{s.label}</button>
@@ -59,10 +60,10 @@ export default function Finance({ role, setActions }) {
       </div>
       {loading ? <div className="skeleton" style={{ height: 160 }} /> : (
         <div key={sub}>
-          {sub === 'summary' && <SummarySec data={data} />}
-          {sub === 'capital' && <CapitalSec role={role} setActions={setActions} />}
-          {sub === 'expenses' && <ExpensesSec role={role} setActions={setActions} />}
-          {sub === 'budget' && <BudgetSec data={data} />}
+          {sub === 'overview' && <SummarySec data={data} role={role} onAddCapital={() => { setCapSignal((x) => x + 1); setActions(null); setSub('capital'); }} />}
+          {sub === 'capital' && <CapitalSec role={role} setActions={setActions} autoOpen={capSignal} />}
+          {sub === 'revenue' && <RevenueSec data={data} />}
+          {sub === 'expenses' && <ExpensesSec role={role} setActions={setActions} data={data} />}
           {sub === 'allocation' && <AllocationSec role={role} data={data} setActions={setActions} />}
           {sub === 'profit' && <ProfitSec role={role} data={data} setActions={setActions} onChanged={load} />}
           {sub === 'cashflow' && <CashflowSec data={data} />}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from './lib/supabaseClient.js';
 import { ConfirmProvider, Field, ToastProvider, useToast } from './components/ui.jsx';
+import { MobileNav, Sidebar, Topbar } from './components/shell.jsx';
 import Finance from './tabs/Finance.jsx';
 
 const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partner', investment_partner: 'Investment Partner' };
@@ -13,7 +14,8 @@ function Shell() {
   const [authErr, setAuthErr] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
   const [showPw, setShowPw] = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem('luk54_theme') || 'light');
+  const [theme, setTheme] = useState(() => localStorage.getItem('luk54_theme') || 'dark');
+  const [collapsed, setCollapsed] = useState(false);
   const [actions, setActions] = useState(null);
 
   useEffect(() => {
@@ -49,6 +51,8 @@ function Shell() {
     if (error) setAuthErr(error.message);
     else toast('success', 'Signed in');
   }
+
+  const soon = (label) => toast('error', label + ' lands in the next update — Finance is live now');
 
   if (!session) {
     return (
@@ -109,26 +113,26 @@ function Shell() {
 
   return (
     <>
-      <div className="top-strip">
-        <span className="brand">LUK54 · {ROLE_LABEL[profile.role] || profile.role}</span>
-        <span className="row">
-          <button className="btn btn-sm" style={{ background: '#ffffff22', color: '#fff' }}
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? 'Light' : 'Dark'}</button>
-          <button className="btn btn-sm" style={{ background: '#ffffff22', color: '#fff' }}
-            onClick={() => supabase.auth.signOut()}>Sign out</button>
-        </span>
-      </div>
-      <div className="page">
-        <div className="page-header">
-          <div>
-            <div className="breadcrumb"><span>Main</span><span>/</span><span>Finance</span></div>
-            <h1>Finance</h1>
-            <p className="u-text-secondary u-text-sm">Disbursements, expenses, budget, allocation and profit</p>
+      <Sidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSoon={soon} />
+      <div className={'main-wrapper' + (collapsed ? ' wide' : '')}>
+        <Topbar title="Overview" theme={theme}
+          onTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          onMenu={() => setCollapsed(!collapsed)}
+          email={session.user.email} roleLabel={ROLE_LABEL[profile.role] || profile.role}
+          onSignOut={() => supabase.auth.signOut()} />
+        <div className="page-root">
+          <div className="page-header">
+            <div className="page-header-title">
+              <div className="breadcrumb"><span>Main</span><span>/</span><span>Finance</span></div>
+              <h1>Finance</h1>
+              <p className="u-text-secondary u-text-sm">Disbursements, revenue, expenses and profit distribution</p>
+            </div>
+            <div className="page-header-actions">{actions}</div>
           </div>
-          <div className="page-header-actions">{actions}</div>
+          <Finance role={profile.role} setActions={setActions} />
         </div>
-        <Finance role={profile.role} setActions={setActions} />
       </div>
+      <MobileNav onSoon={soon} />
     </>
   );
 }

@@ -4,6 +4,34 @@ import { formatDate, formatNumber, formatUGX } from '../../lib/format.js';
 import { BUDGET_SEED, canWrite, cashflowEvents, computeAllocation, sum } from '../../lib/finance.js';
 import { Badge, DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
 
+/* ── Revenue (sales ledger, read-only — sales are recorded in Operations) ── */
+export function RevenueSec({ data }) {
+  const rows = data.sales || [];
+  const total = sum(rows, 'total_revenue');
+  const trays = rows.reduce((s, r) => s + Number(r.quantity_trays || 0), 0);
+  return (
+    <>
+      <div className="kpi-grid mb-4">
+        <div className="card kpi-card" style={{ maxWidth: 280 }}>
+          <div className="kpi-label">Total revenue</div>
+          <div className="kpi-value">{formatUGX(total)}</div>
+        </div>
+        <div className="card kpi-card" style={{ maxWidth: 280 }}>
+          <div className="kpi-label">Trays sold</div>
+          <div className="kpi-value">{formatNumber(trays, 1)}</div>
+        </div>
+      </div>
+      <DataTable columns={[
+        { key: 'd', label: 'Date', accessor: (r) => formatDate(r.date) },
+        { key: 'c', label: 'Customer', accessor: (r) => r.customer || '—' },
+        { key: 't', label: 'Trays', accessor: (r) => formatNumber(r.quantity_trays, 1) },
+        { key: 'r', label: 'Revenue', accessor: (r) => formatUGX(r.total_revenue) },
+        { key: 'p', label: 'Payment', accessor: (r) => r.payment_status || '—' },
+      ]} rows={rows} emptyMessage="No sales recorded yet. Sales are recorded under Operations." />
+    </>
+  );
+}
+
 /* ── Budget ── */
 export function BudgetSec({ data }) {
   const toast = useToast();
