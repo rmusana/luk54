@@ -5,12 +5,21 @@ import Finance from './tabs/Finance.jsx';
 
 const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partner', investment_partner: 'Investment Partner' };
 
-function EggMark({ size = 28 }) {
+function LogoMark({ size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      <path d="M32 54 V30" stroke="#fff" strokeWidth="4" strokeLinecap="round" />
-      <path d="M32 38 C22 38 14 32 12 20 C24 20 31 27 32 38 Z" fill="#fff" />
-      <path d="M32 32 C42 32 50 26 52 14 C40 14 33 21 32 32 Z" fill="#fff" opacity="0.75" />
+      <path d="M22 42 C12 40 6 32 7 20 C11 28 16 31 21 32 C15 26 14 18 17 10 C20 18 24 22 28 24" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" />
+      <ellipse cx="33" cy="41" rx="12" ry="9" fill="#fff" />
+      <path d="M40 36 C42 28 42 22 44 17" stroke="#fff" strokeWidth="5" strokeLinecap="round" />
+      <circle cx="45" cy="14" r="6" fill="#fff" />
+      <circle cx="42" cy="7" r="2.4" fill="#fff" />
+      <circle cx="46" cy="6" r="2.4" fill="#fff" />
+      <circle cx="50" cy="7.5" r="2.4" fill="#fff" />
+      <polygon points="51,12 57,14.5 51,17" fill="#fff" />
+      <circle cx="46" cy="13" r="1.4" fill="#1a5c3e" />
+      <ellipse cx="49" cy="20" rx="2" ry="3" fill="#fff" />
+      <line x1="29" y1="50" x2="29" y2="57" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+      <line x1="37" y1="50" x2="37" y2="57" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -121,7 +130,7 @@ function Shell() {
     <>
       <div className="top-strip">
         <span className="brand" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <EggMark size={28} /> LUK54 · {ROLE_LABEL[profile.role] || profile.role}
+          <LogoMark size={28} /> LUK54 · {ROLE_LABEL[profile.role] || profile.role}
         </span>
         <span className="row">
           <button className="btn btn-sm" style={{ background: '#ffffff22', color: '#fff' }}
