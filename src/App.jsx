@@ -5,22 +5,12 @@ import Finance from './tabs/Finance.jsx';
 
 const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partner', investment_partner: 'Investment Partner' };
 
-function ChickenMark({ size = 30 }) {
+function EggMark({ size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true">
       <rect width="64" height="64" rx="14" fill="rgba(255,255,255,0.16)" />
-      <g transform="translate(8,8)">
-        <ellipse cx="22" cy="32" rx="14" ry="11" fill="#fff" />
-        <circle cx="34" cy="16" r="7" fill="#fff" />
-        <circle cx="31" cy="8" r="2.6" fill="#fff" />
-        <circle cx="35" cy="7" r="2.6" fill="#fff" />
-        <circle cx="39" cy="8.5" r="2.6" fill="#fff" />
-        <polygon points="41,14 47,16.5 41,19" fill="#ffd9a0" />
-        <circle cx="35.5" cy="15" r="1.4" fill="#1a5c3e" />
-        <path d="M10 28 Q4 22 6 14 Q10 20 13 21 Q8 16 10 8" stroke="#fff" strokeWidth="2.6" fill="none" strokeLinecap="round" />
-        <line x1="18" y1="43" x2="18" y2="49" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
-        <line x1="26" y1="43" x2="26" y2="49" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
-      </g>
+      <ellipse cx="32" cy="34" rx="13" ry="16" fill="#fff" />
+      <ellipse cx="27" cy="29" rx="3.5" ry="5" fill="#f2ede6" opacity="0.8" />
     </svg>
   );
 }
@@ -78,17 +68,13 @@ function Shell() {
           <div className="login-visual-content">
             <h1 className="login-brand-name">LUK54</h1>
             <p className="login-brand-sub">Investment & operations platform</p>
-            <p className="login-brand-desc">Capital, spending, production and profit — from any phone.</p>
           </div>
         </div>
         <div className="login-panel">
           <div className="login-panel-inner">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-              <span className="login-mark"><ChickenMark size={40} /></span>
-              <div>
-                <div style={{ fontWeight: 800, letterSpacing: '-0.02em', color: '#1a1f1c' }}>LUK54</div>
-                <div className="u-text-xs u-text-muted">Farm investment platform</div>
-              </div>
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.02em', color: '#1a1f1c' }}>LUK54</div>
+              <div className="u-text-xs u-text-muted">Farm investment platform</div>
             </div>
             <h2 className="login-title">Sign in</h2>
             <p className="login-subtitle">Use your farm account to continue.</p>
@@ -135,7 +121,7 @@ function Shell() {
     <>
       <div className="top-strip">
         <span className="brand" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ChickenMark size={28} /> LUK54 · {ROLE_LABEL[profile.role] || profile.role}
+          <EggMark size={28} /> LUK54 · {ROLE_LABEL[profile.role] || profile.role}
         </span>
         <span className="row">
           <button className="btn btn-sm" style={{ background: '#ffffff22', color: '#fff' }}
