@@ -33,7 +33,6 @@ export function Sidebar({ collapsed, onCollapse, onSoon }) {
   return (
     <aside className={'sidebar' + (collapsed ? ' collapsed' : '')} aria-label="Main navigation">
       <div className="sidebar-brand">
-        <div className="sidebar-brand-mark" aria-hidden="true"><span>54</span></div>
         <div className="sidebar-brand-copy">
           <span className="sidebar-brand-text">LUK54</span>
           <span className="sidebar-brand-sub">Jalo Dream Farm</span>
