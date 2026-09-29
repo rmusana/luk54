@@ -129,7 +129,9 @@ function Shell() {
   return (
     <>
       <div className="top-strip">
-        <span className="brand">LUK54 · {ROLE_LABEL[profile.role] || profile.role}</span>
+        <span className="brand" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <LogoMark size={28} /> LUK54 · {ROLE_LABEL[profile.role] || profile.role}
+        </span>
         <span className="row">
           <button className="btn btn-sm" style={{ background: '#ffffff22', color: '#fff' }}
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? 'Light' : 'Dark'}</button>
