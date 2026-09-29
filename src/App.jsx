@@ -8,8 +8,9 @@ const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partn
 function EggMark({ size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      <ellipse cx="32" cy="34" rx="14" ry="17" fill="#fff" />
-      <ellipse cx="27" cy="28" rx="3.5" ry="5" fill="#f2ede6" opacity="0.8" />
+      <path d="M32 54 V30" stroke="#fff" strokeWidth="4" strokeLinecap="round" />
+      <path d="M32 38 C22 38 14 32 12 20 C24 20 31 27 32 38 Z" fill="#fff" />
+      <path d="M32 32 C42 32 50 26 52 14 C40 14 33 21 32 32 Z" fill="#fff" opacity="0.75" />
     </svg>
   );
 }
