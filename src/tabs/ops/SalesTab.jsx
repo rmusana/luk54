@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
 import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, formatUGX, todayEAT } from '../../lib/format.js';
-import { DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
+import { DataTable, Field, Modal, ReceiptThumb, useConfirm, useToast } from '../../components/ui.jsx';
+import { isOnline, smartInsert } from '../../lib/queue.js';
 
 const TRAY = 30;
 const EGG_TYPES = [
@@ -59,6 +60,7 @@ export default function SalesTab({ setActions, writable = true }) {
             { key: 'price', label: 'Price/tray', accessor: (r) => formatUGX(r.unit_price) },
             { key: 'rev', label: 'Revenue', accessor: (r) => formatUGX(r.total_revenue) },
             { key: 'pay', label: 'Payment', accessor: (r) => r.payment_status || '—' },
+            { key: 'doc', label: '🧾', accessor: (r) => <ReceiptThumb path={r.document_id} name={'Sale ' + (r.date || '')} /> },
           ]}
           rows={rows}
           actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
@@ -92,6 +94,11 @@ function SaleForm({ onClose, onSaved }) {
     if (!f.date || !f.quantity_trays || !f.unit_price) { toast('error', 'Date, quantity and price are required'); return; }
     setBusy(true);
     setBusyLabel('Saving…');
+    if (!isOnline() && file) {
+      setBusy(false);
+      toast('error', 'Receipt photos need a connection — save without the receipt, or reconnect and retry');
+      return;
+    }
     let documentId = '';
     if (file) {
       setBusyLabel('Uploading…');
@@ -103,7 +110,7 @@ function SaleForm({ onClose, onSaved }) {
     }
     const trays = Number(f.quantity_trays) || 0;
     const price = Number(f.unit_price) || 0;
-    const { data: insData, error } = await supabase.from('sales').insert({
+    const payload = {
       project_id: 'LUK54', date: f.date, customer: f.customer || '',
       quantity_trays: trays, quantity_eggs: trays * TRAY, unit_price: price,
       total_revenue: trays * price, sale_category: f.sale_category, egg_type: f.egg_type,
@@ -111,10 +118,19 @@ function SaleForm({ onClose, onSaved }) {
       breakage_trays_sold: Number(f.breakage_trays_sold) || 0,
       damaged_trays_sold: Number(f.damaged_trays_sold) || 0,
       lost_trays: Number(f.lost_trays) || 0, notes: f.notes || '', document_id: documentId,
-    }).select('id').single();
+    };
+    let insData = null;
+    try {
+      const res = await smartInsert('sales', payload, 'Sale ' + trays + ' trays on ' + f.date);
+      if (res.queued) { setBusy(false); toast('success', 'No connection — sale queued, will sync automatically'); onSaved(); return; }
+      insData = res.data;
+    } catch (e) {
+      setBusy(false);
+      toast('error', e.message || 'Save failed');
+      return;
+    }
     setBusy(false);
-    if (error) toast('error', error.message);
-    else { audit('CREATE', 'sales', insData?.id, 'Sale ' + trays + ' trays UGX ' + (trays * price) + ' on ' + f.date); toast('success', 'Sale recorded'); onSaved(); }
+    audit('CREATE', 'sales', insData?.id, 'Sale ' + trays + ' trays UGX ' + (trays * price) + ' on ' + f.date); toast('success', 'Sale recorded'); onSaved();
   }
 
   return (

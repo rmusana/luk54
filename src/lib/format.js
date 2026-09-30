@@ -50,3 +50,19 @@ export function formatPercent(n, digits = 1) {
   if (n == null || isNaN(Number(n))) return '—';
   return Number(n).toFixed(digits) + '%';
 }
+
+/** Compact money: UGX 63.5M · UGX 900K · UGX 450 */
+export function formatUGXCompact(n) {
+  if (n == null || n === '' || isNaN(Number(n))) return '—';
+  const num = Math.abs(Number(n));
+  const sign = Number(n) < 0 ? '-' : '';
+  if (num >= 1000000) {
+    const v = Math.round((num / 1000000) * 10) / 10;
+    return 'UGX ' + sign + (Number.isInteger(v) ? v.toFixed(0) : v) + 'M';
+  }
+  if (num >= 1000) {
+    const v = Math.round((num / 1000) * 10) / 10;
+    return 'UGX ' + sign + (Number.isInteger(v) ? v.toFixed(0) : v) + 'K';
+  }
+  return 'UGX ' + sign + Math.round(num).toLocaleString('en-US');
+}

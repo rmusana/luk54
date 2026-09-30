@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { supabase } from '../lib/supabaseClient.js';
-import { formatDate, formatNumber, formatPercent, formatUGX } from '../lib/format.js';
+import { formatDate, formatNumber, formatPercent, formatUGX, formatUGXCompact } from '../lib/format.js';
 import { buildInsights, computeSummary, recentActivity } from '../lib/dashboard.js';
 import { getMissingDays } from '../lib/gaps.js';
 import { runEngine, visibleToRole } from '../lib/alerts.js';
-import { Badge, useToast } from '../components/ui.jsx';
+import { Badge, EmptyState, useToast } from '../components/ui.jsx';
 import { Icon } from '../components/shell.jsx';
 
 Chart.register(...registerables);
@@ -34,6 +34,8 @@ export default function Dashboard({ role, onNavigate, setActions }) {
   const [trays, setTrays] = useState(null);
   const [eat, setEat] = useState('--:--');
   const [tick, setTick] = useState(0);
+  const [pulling, setPulling] = useState(0);
+  const touchY = useRef(0);
   const eggRef = useRef(null);
   const capRef = useRef(null);
   const charts = useRef([]);
@@ -107,6 +109,11 @@ export default function Dashboard({ role, onNavigate, setActions }) {
           { label: 'Laying %', data: trend.length ? trend.map((t) => t.percent) : [0], borderColor: '#6b7280', borderDash: [4, 4], tension: 0.32, pointRadius: 0, yAxisID: 'y1' },
         ] },
         options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+          onClick: (evt, els) => {
+            const i = els && els[0] ? els[0].index : null;
+            const t = i != null ? trend[i] : null;
+            if (t) { toast('success', t.date + ': ' + t.trays + ' trays · ' + t.percent + '%'); onNavigate('operations'); }
+          },
           plugins: { legend: { display: true } },
           scales: { y: { position: 'left', title: { display: true, text: 'Trays (30 eggs)' } }, y1: { position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, title: { display: true, text: '%' } }, x: { grid: { display: false } } } },
       }));
@@ -120,6 +127,11 @@ export default function Dashboard({ role, onNavigate, setActions }) {
           datasets: [{ data: [inv, exp, Math.max(0, inv - exp), Math.max(0, s.netProfit || 0)],
             backgroundColor: [accent, '#9ca3af', '#e8e0d6', '#059669'], borderRadius: 8, barThickness: 28 }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+          onClick: (evt, els) => {
+            const names = ['Disbursements', 'Expenses', 'Overview', 'Profit'];
+            const i = els && els[0] ? els[0].index : null;
+            if (i != null) { toast('success', names[i] + ' — opening Finance'); onNavigate('finance'); }
+          },
           scales: { y: { beginAtZero: true, ticks: { callback: (v) => 'UGX ' + Number(v).toLocaleString() } }, x: { grid: { display: false } } } },
       }));
     }
@@ -133,14 +145,29 @@ export default function Dashboard({ role, onNavigate, setActions }) {
     return () => { clearInterval(t); charts.current.forEach((c) => { try { c.destroy(); } catch (e) {} }); };
   }, [tick]);
 
+  function onTouchStart(e) {
+    touchY.current = e.touches[0].clientY;
+  }
+  function onTouchMove(e) {
+    const dy = e.touches[0].clientY - touchY.current;
+    if (window.scrollY === 0 && dy > 0) setPulling(Math.min(90, Math.round(dy / 2)));
+  }
+  function onTouchEnd() {
+    if (pulling > 60) {
+      toast('success', 'Refreshing…');
+      setTick((t) => t + 1);
+    }
+    setPulling(0);
+  }
+
   const kpis = summary ? [
-    { label: 'Total Investment', value: formatUGX(summary.totalInvestment), insight: 'Total capital contributed', nav: 'finance', primary: role === 'investment_partner' },
-    { label: 'Total Expenses', value: formatUGX(summary.totalExpenses), insight: 'Cumulative expenditure', nav: 'finance' },
-    { label: 'Gross Revenue', value: formatUGX(summary.revenue), insight: summary.commercialReached ? 'Egg sales' : 'Allocation not yet active', nav: 'finance', primary: role === 'investment_partner' },
-    { label: 'Net Profit (Investor)', value: formatUGX(summary.netProfit), insight: 'After feed + operator share', nav: 'finance', primary: role === 'investment_partner' },
-    { label: 'ROI', value: formatPercent(summary.roi), insight: 'Net profit ÷ capital', nav: 'finance', trend: summary.roi > 0 ? { direction: 'up', label: 'vs capital' } : null },
-    { label: 'Cash Position', value: formatUGX(summary.cashPosition), insight: 'Capital − expenses + net', nav: 'finance' },
-    { label: 'Outstanding Funding', value: formatUGX(summary.outstandingFunding), insight: summary.outstandingFunding > 0 ? 'Additional capital may be required' : 'Within estimate', nav: 'finance' },
+    { label: 'Total Investment', value: formatUGXCompact(summary.totalInvestment), full: formatUGX(summary.totalInvestment), insight: 'Total capital contributed', nav: 'finance' },
+    { label: 'Total Expenses', value: formatUGXCompact(summary.totalExpenses), full: formatUGX(summary.totalExpenses), insight: 'Cumulative expenditure', nav: 'finance' },
+    { label: 'Gross Revenue', value: formatUGXCompact(summary.revenue), full: formatUGX(summary.revenue), insight: summary.commercialReached ? 'Egg sales' : 'Allocation not yet active', nav: 'finance', primary: role === 'investment_partner' },
+    { label: 'Net Profit (Investor)', value: formatUGXCompact(summary.netProfit), full: formatUGX(summary.netProfit), insight: 'After feed + operator share', nav: 'finance', primary: role === 'investment_partner' },
+    { label: 'ROI', value: formatPercent(summary.roi), insight: 'Net profit ÷ capital', nav: 'finance' },
+    { label: 'Cash Position', value: formatUGXCompact(summary.cashPosition), full: formatUGX(summary.cashPosition), insight: 'Capital − expenses + net', nav: 'finance' },
+    { label: 'Outstanding Funding', value: formatUGXCompact(summary.outstandingFunding), full: formatUGX(summary.outstandingFunding), insight: summary.outstandingFunding > 0 ? 'Additional capital may be required' : 'Within estimate', nav: 'finance' },
     { label: 'Production', value: summary.productionPercent != null ? formatPercent(summary.productionPercent) : '—', insight: 'Target 88–92% · ≥85% commercial', nav: null },
     { label: 'Mortality Rate', value: summary.mortalityRate != null ? formatPercent(summary.mortalityRate) : '—', insight: 'Cumulative vs peak', nav: null },
     { label: 'Budget Performance', value: summary.budgetTotal ? formatPercent(summary.budgetSpent && summary.budgetTotal ? (summary.budgetSpent / summary.budgetTotal) * 100 : 0) : '—', insight: 'Actual vs estimate', nav: 'finance' },
@@ -153,7 +180,8 @@ export default function Dashboard({ role, onNavigate, setActions }) {
   const netTrays = trays ? Math.max(0, trays.collected - trays.sold - trays.lost - trays.damaged - trays.breakages) : 0;
 
   return (
-    <>
+    <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+      <div className="pull-hint">{pulling > 60 ? 'Release to refresh ↓' : pulling > 0 ? 'Pull to refresh…' : ''}</div>
       <div className="card" style={{ padding: '10px 16px', marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', background: 'linear-gradient(135deg, var(--color-bg-elevated), var(--color-bg-subtle))', border: '1px solid var(--color-border)' }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', fontSize: 12, color: 'var(--color-text-secondary)' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -228,7 +256,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
           <div className={'card kpi-card' + (it.primary ? ' kpi-primary' : '') + (it.nav ? ' clickable' : '')} key={it.label}
             onClick={() => it.nav && onNavigate(it.nav)}>
             <div className="kpi-label">{it.label}</div>
-            <div className="kpi-value">{it.value ?? '—'}</div>
+            <div className="kpi-value" title={it.full || it.value}>{it.value ?? '—'}</div>
             {it.trend && <div className={'kpi-trend ' + it.trend.direction}>{it.trend.direction === 'up' ? Icon.trendUp : Icon.trendDown}<span>{it.trend.label}</span></div>}
             <div className="kpi-insight">{it.insight || ''}</div>
             {it.nav && <span className="chev">›</span>}
@@ -309,7 +337,9 @@ export default function Dashboard({ role, onNavigate, setActions }) {
                 <div className="u-text-xs u-text-muted">{formatDate(a.date)}</div>
               </div>
             </div>
-          )) : <div className="empty-state" style={{ padding: 14 }}><p className="empty-state-desc">No recent activity. Daily logs and sales will appear here.</p></div>}
+          )) : <EmptyState title="Quiet so far" desc="Daily logs, contributions and sales will appear here as the farm works."
+            actionLabel={(role === 'admin' || role === 'operating_partner') ? 'Log the first day' : null}
+            onAction={() => onNavigate('operations')} />}
         </div>
       </div>
 
@@ -321,6 +351,6 @@ export default function Dashboard({ role, onNavigate, setActions }) {
           <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('finance')}>Review Funding</button>
         </div>
       </div>
-    </>
+    </div>
   );
 }

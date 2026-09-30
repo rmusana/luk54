@@ -3,8 +3,9 @@ import { supabase } from '../../lib/supabaseClient.js';
 import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, formatPercent, formatUGX, todayEAT } from '../../lib/format.js';
 import { BUDGET_SEED, CAPITAL_PURPOSES, EXPENSE_CATEGORIES, canWrite, cashflowEvents, computeAllocation, financialSummary, forecast, isCommercial, matchBudgetLine, sum } from '../../lib/finance.js';
-import { Badge, DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
+import { Badge, DataTable, Field, Modal, ReceiptThumb, useConfirm, useToast } from '../../components/ui.jsx';
 import { BudgetSec } from './Sections.jsx';
+import { isOnline, smartInsert } from '../../lib/queue.js';
 
 function useFinTable(table, order = 'date') {
   const toast = useToast();
@@ -184,6 +185,7 @@ export function CapitalSec({ role, setActions, autoOpen }) {
           { key: 'a', label: 'Amount', accessor: (r) => formatUGX(r.amount) },
           { key: 'p', label: 'Purpose', accessor: (r) => r.purpose || 'General' },
           { key: 'r', label: 'Reference', accessor: (r) => r.reference || '—' },
+          { key: 'doc', label: '🧾', accessor: (r) => <ReceiptThumb path={r.document_id} name={'Disbursement ' + (r.date || '')} /> },
         ]} rows={rows}
           actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
@@ -203,19 +205,31 @@ function CapitalForm({ onClose, onSaved }) {
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   async function save() {
     if (!f.date || !f.amount) { toast('error', 'Date and amount are required'); return; }
+    if (!isOnline() && file) {
+      toast('error', 'Receipt photos need a connection — save without the receipt, or reconnect and retry');
+      return;
+    }
     setBusy(true); setLabel('Saving…');
     let documentId = '';
     if (file) {
       try { documentId = await uploadReceipt(file, setLabel); setLabel('Saving…'); }
       catch (e) { setBusy(false); toast('error', e.message || 'Upload failed'); return; }
     }
-    const { data: insData, error } = await supabase.from('capital_contributions').insert({
-      project_id: 'LUK54', date: f.date, amount: Number(f.amount) || 0,
-      purpose: f.purpose || 'General', reference: f.reference || '', document_id: documentId,
-    }).select('id').single();
+    let insData = null;
+    try {
+      const res = await smartInsert('capital_contributions', {
+        project_id: 'LUK54', date: f.date, amount: Number(f.amount) || 0,
+        purpose: f.purpose || 'General', reference: f.reference || '', document_id: documentId,
+      }, 'Disbursement ' + f.amount + ' on ' + f.date);
+      if (res.queued) { setBusy(false); toast('success', 'No connection — disbursement queued, will sync automatically'); onSaved(); return; }
+      insData = res.data;
+    } catch (e) {
+      setBusy(false);
+      toast('error', e.message || 'Save failed');
+      return;
+    }
     setBusy(false);
-    if (error) toast('error', error.message);
-    else { audit('CREATE', 'capital_contributions', insData?.id, 'Disbursement ' + f.amount + ' on ' + f.date + ' (' + (f.purpose || 'General') + ')'); toast('success', 'Disbursement recorded'); onSaved(); }
+    audit('CREATE', 'capital_contributions', insData?.id, 'Disbursement ' + f.amount + ' on ' + f.date + ' (' + (f.purpose || 'General') + ')'); toast('success', 'Disbursement recorded'); onSaved();
   }
   return (
     <Modal title="Record disbursement" onClose={onClose}
@@ -268,6 +282,7 @@ export function ExpensesSec({ role, setActions, data }) {
           { key: 's', label: 'Detail', accessor: (r) => r.sub_category || '—' },
           { key: 'a', label: 'Amount', accessor: (r) => formatUGX(r.amount) },
           { key: 'sup', label: 'Supplier', accessor: (r) => r.supplier || '—' },
+          { key: 'doc', label: '🧾', accessor: (r) => <ReceiptThumb path={r.document_id} name={'Expense ' + (r.date || '')} /> },
         ]} rows={rows}
           actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
@@ -289,6 +304,10 @@ function ExpenseForm({ onClose, onSaved }) {
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   async function save() {
     if (!f.date || !f.category || !f.amount) { toast('error', 'Date, category and amount are required'); return; }
+    if (!isOnline() && file) {
+      toast('error', 'Receipt photos need a connection — save without the receipt, or reconnect and retry');
+      return;
+    }
     setBusy(true); setLabel('Saving…');
     let documentId = '';
     if (file) {
@@ -296,11 +315,19 @@ function ExpenseForm({ onClose, onSaved }) {
       catch (e) { setBusy(false); toast('error', e.message || 'Upload failed'); return; }
     }
     const amount = Number(f.amount) || 0;
-    const { data: insData, error } = await supabase.from('expenses').insert({
-      project_id: 'LUK54', date: f.date, category: f.category, sub_category: f.sub_category || '',
-      amount, supplier: f.supplier || '', document_id: documentId, notes: f.notes || '',
-    }).select('id').single();
-    if (error) { setBusy(false); toast('error', error.message); return; }
+    let insData = null;
+    try {
+      const res = await smartInsert('expenses', {
+        project_id: 'LUK54', date: f.date, category: f.category, sub_category: f.sub_category || '',
+        amount, supplier: f.supplier || '', document_id: documentId, notes: f.notes || '',
+      }, 'Expense ' + f.category + ' ' + amount + ' on ' + f.date);
+      if (res.queued) { setBusy(false); toast('success', 'No connection — expense queued, will sync automatically'); onSaved(); return; }
+      insData = res.data;
+    } catch (e) {
+      setBusy(false);
+      toast('error', e.message || 'Save failed');
+      return;
+    }
     audit('CREATE', 'expenses', insData?.id, 'Expense ' + f.category + ' ' + amount + ' on ' + f.date);
     // mirror updateBudgetActual: category + sub-item substring, fallback category-only
     try {

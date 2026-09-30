@@ -117,7 +117,54 @@ export function Badge({ tone = 'neutral', children }) {
   return <span className={'badge badge-' + tone}>{children}</span>;
 }
 
-/* ── Production gauge (SVG ring) ── */
+/* ── Teaching empty state ── */
+export function EmptyState({ title, desc, actionLabel, onAction }) {
+  return (
+    <div className="empty-state">
+      {title && <p className="empty-state-title">{title}</p>}
+      {desc && <p className="empty-state-desc">{desc}</p>}
+      {actionLabel && <button className="btn btn-primary btn-sm" style={{ marginTop: 10 }} onClick={onAction}>{actionLabel}</button>}
+    </div>
+  );
+}
+
+/* ── Receipt thumbnail (money rows) ── */
+export function ReceiptThumb({ path, name }) {
+  const [open, setOpen] = React.useState(false);
+  const [url, setUrl] = React.useState('');
+  const [err, setErr] = React.useState('');
+  if (!path) return <span className="u-text-muted">—</span>;
+  async function view() {
+    setOpen(true);
+    setErr('');
+    try {
+      const { supabase } = await import('../lib/supabaseClient.js');
+      const { data, error } = await supabase.storage.from('receipts').createSignedUrl(path, 3600);
+      if (error) throw error;
+      setUrl(data.signedUrl);
+    } catch (e) {
+      setErr(e.message || 'Preview unavailable');
+    }
+  }
+  const isImg = /\.(png|jpe?g|gif|webp|svg)$/i.test(name || path);
+  return (
+    <>
+      <button className="btn btn-ghost btn-sm" title={name || path} onClick={view}>🧾</button>
+      {open && (
+        <Modal title={name || 'Receipt'} onClose={() => { setOpen(false); setUrl(''); }}
+          footer={<>
+            {url && <a className="btn btn-secondary" href={url} target="_blank" rel="noreferrer">Open / Download</a>}
+            <button className="btn btn-secondary" onClick={() => { setOpen(false); setUrl(''); }}>Close</button>
+          </>}>
+          {err ? <div className="form-error-global">{err}</div>
+            : !url ? <div className="skeleton" style={{ height: 200 }} />
+            : isImg ? <img src={url} alt="" style={{ width: '100%', borderRadius: 8 }} />
+            : <p className="u-text-sm u-text-secondary">Preview not available inline — use Open / Download.</p>}
+        </Modal>
+      )}
+    </>
+  );
+}
 export function Gauge({ pct }) {
   const color = pct == null ? 'var(--color-text-muted)'
     : pct >= 88 ? 'var(--color-positive)' : pct >= 80 ? 'var(--color-caution)' : 'var(--color-critical)';

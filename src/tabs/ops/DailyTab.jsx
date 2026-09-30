@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient.js';
 import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, todayEAT } from '../../lib/format.js';
 import { canLogDate, getMissingDays } from '../../lib/gaps.js';
+import { smartInsert } from '../../lib/queue.js';
 import { DataTable, Field, Gauge, Modal, Sparkline, useConfirm, useToast } from '../../components/ui.jsx';
 
 const TRAY = 30;
@@ -165,10 +166,18 @@ function DailyForm({ onClose, onSaved, initialDate, existingRows }) {
       feed_issued_kg: Number(f.feed_issued_kg) || 0,
       notes: f.notes || '',
     };
-    const { data: insData, error } = await supabase.from('daily_production').insert(payload).select('id').single();
+    let insData = null;
+    try {
+      const res = await smartInsert('daily_production', payload, 'Daily log ' + f.date);
+      if (res.queued) { setBusy(false); toast('success', 'No connection — log queued, will sync automatically'); onSaved(); return; }
+      insData = res.data;
+    } catch (e) {
+      setBusy(false);
+      toast('error', e.message || 'Save failed');
+      return;
+    }
     setBusy(false);
-    if (error) toast('error', error.message);
-    else { audit('CREATE', 'daily_production', insData?.id, 'Log ' + f.date + ' ' + (f.section || '') + ' eggs ' + (trays * TRAY) + ' mort ' + mort); toast('success', 'Daily log saved'); onSaved(); }
+    audit('CREATE', 'daily_production', insData?.id, 'Log ' + f.date + ' ' + (f.section || '') + ' eggs ' + (trays * TRAY) + ' mort ' + mort); toast('success', 'Daily log saved'); onSaved();
   }
 
   return (

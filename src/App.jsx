@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from './lib/supabaseClient.js';
 import { ConfirmProvider, Field, ToastProvider, useToast } from './components/ui.jsx';
 import { audit, setActor } from './lib/audit.js';
+import { isOnline, onOutbox, readOutbox, startOutboxAutoSync, syncOutbox } from './lib/queue.js';
 import { MobileNav, Sidebar, Topbar } from './components/shell.jsx';
 import Finance from './tabs/Finance.jsx';
 import Dashboard from './tabs/Dashboard.jsx';
@@ -27,6 +28,8 @@ function Shell() {
   const [actions, setActions] = useState(null);
   const [module, setModule] = useState('dashboard');
   const [bellAlerts, setBellAlerts] = useState([]);
+  const [online, setOnline] = useState(isOnline());
+  const [pending, setPending] = useState(readOutbox().length);
 
   async function loadBell(uid, role) {
     if (role !== 'admin' && role !== 'operating_partner') { setBellAlerts([]); return; }
@@ -36,6 +39,19 @@ function Shell() {
     const rank = { Critical: 0, High: 1, Medium: 2, Low: 3 };
     setBellAlerts([...(data || [])].sort((a, b) => (rank[a.priority] ?? 9) - (rank[b.priority] ?? 9)));
   }
+
+  useEffect(() => {
+    const off1 = onOutbox((items) => setPending(items.length));
+    const off2 = startOutboxAutoSync((res) => {
+      if (res.synced) toast('success', res.synced + ' queued change(s) synced');
+      if (res.failed) toast('error', res.failed + ' queued change(s) still failing');
+    });
+    const up = () => setOnline(true);
+    const down = () => setOnline(false);
+    window.addEventListener('online', up);
+    window.addEventListener('offline', down);
+    return () => { off1(); off2(); window.removeEventListener('online', up); window.removeEventListener('offline', down); };
+  }, []);
 
   useEffect(() => {
     if (!session || !profile) return;
@@ -206,6 +222,16 @@ function Shell() {
           email={session.user.email} roleLabel={ROLE_LABEL[profile.role] || profile.role}
           onSignOut={() => supabase.auth.signOut()}
           alerts={bellAlerts} onOpenAlerts={() => navigate('alerts')} />
+        {(!online || pending > 0) && (
+          <div className="offline-bar">
+            {!online ? 'You are offline — new logs will queue on this phone. ' : ''}
+            {pending > 0 ? pending + ' change(s) waiting to sync. ' : 'Back online. '}
+            {pending > 0 && online && <button className="btn btn-sm" style={{ marginLeft: 8, background: 'rgba(255,255,255,0.5)' }} onClick={async () => {
+              const res = await syncOutbox();
+              toast('success', res.synced + ' synced' + (res.failed ? ', ' + res.failed + ' failed' : ''));
+            }}>Sync now</button>}
+          </div>
+        )}
         <div className="page-root" key={module}>
           {module === 'dashboard' && (
             <>
