@@ -103,6 +103,10 @@ export default function Alerts({ role, setActions }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {a.status === 'Open' && <button className="btn btn-secondary btn-sm" onClick={() => setStatus(a, 'Acknowledged')}>Acknowledge</button>}
                 <button className="btn btn-primary btn-sm" onClick={() => setStatus(a, 'Resolved')}>Resolve</button>
+                <a className="btn btn-secondary btn-sm" target="_blank" rel="noreferrer"
+                  href={'https://wa.me/?text=' + encodeURIComponent('LUK54 ALERT [' + a.priority + '] ' + a.title + ' — ' + (a.reason || '') + ' Action: ' + (a.suggested_action || 'see app'))}>
+                  WhatsApp
+                </a>
               </div>
             )}
           </div>

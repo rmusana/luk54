@@ -18,9 +18,18 @@ export default function Reports({ setActions }) {
   const [report, setReport] = useState(null);
 
   useEffect(() => {
-    setActions(
-      <button className="btn btn-secondary btn-sm" disabled={!report} onClick={() => window.print()}>Print / PDF</button>
-    );
+    setActions(report ? (
+      <>
+        <a className="btn btn-secondary btn-sm" target="_blank" rel="noreferrer"
+          href={'https://wa.me/?text=' + encodeURIComponent(
+            'LUK54 ' + report.title + ' — ' + report.period + '\n' +
+            report.kpis.slice(0, 6).map(([l, v]) => l + ': ' + (typeof v === 'number' ? v.toLocaleString() : v)).join('\n')
+          )}>
+          WhatsApp
+        </a>
+        <button className="btn btn-secondary btn-sm" onClick={() => window.print()}>Print / PDF</button>
+      </>
+    ) : null);
     return () => setActions(null);
   }, [report]);
 
