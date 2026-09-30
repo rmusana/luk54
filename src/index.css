@@ -202,7 +202,50 @@ body { margin: 0; font-family: var(--font-sans); background: var(--color-bg); co
 .cal-today { background: var(--color-accent); color: #fff; font-weight: 700; border-color: var(--color-accent); }
 .cal-planned { background: var(--color-accent-soft); border: 1px solid var(--color-accent); color: var(--color-accent); font-weight: 600; }
 
-/* Login (same split-screen classes as original) */
+/* ── Glass login: farm photo backdrop + dark card ── */
+.glass-login { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 20px;
+  background: linear-gradient(rgba(10, 15, 12, 0.55), rgba(10, 15, 12, 0.65)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=75') center/cover no-repeat, #0c1210; }
+.glass-card { display: grid; grid-template-columns: 1fr 1fr; width: 100%; max-width: 880px; border-radius: 20px; overflow: hidden;
+  background: rgba(20, 28, 25, 0.82); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5); }
+.glass-brand { position: relative; background: linear-gradient(150deg, #0f2e22 0%, #1a5c3e 60%, #237a52 100%); padding: 44px 36px; display: flex; }
+.glass-shade { position: absolute; inset: 0; background: radial-gradient(400px 300px at 80% 100%, rgba(251, 191, 36, 0.12), transparent 60%); pointer-events: none; }
+.glass-brand-inner { position: relative; display: flex; flex-direction: column; justify-content: center; }
+.glass-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 34px; }
+.glass-logo-mark { width: 38px; height: 38px; border-radius: 11px; background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.22); display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 18px; }
+.glass-logo span strong { display: block; color: #fff; font-size: 15px; letter-spacing: -0.01em; }
+.glass-logo span small { display: block; color: rgba(255, 255, 255, 0.65); font-size: 11px; }
+.glass-brand-inner h2 { margin: 0 0 14px; color: #fff; font-size: clamp(26px, 3.4vw, 34px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
+.glass-brand-inner h2 span { color: #a7e3c3; }
+.glass-brand-inner p { margin: 0; color: rgba(255, 255, 255, 0.6); font-size: 13px; }
+.glass-form { padding: 44px 40px; }
+.glass-form h2 { margin: 0 0 4px; color: #fff; font-size: 24px; font-weight: 750; letter-spacing: -0.02em; }
+.glass-sub { margin: 0 0 22px; color: rgba(255, 255, 255, 0.55); font-size: 13px; }
+.glass-label { display: block; margin: 0 0 7px; color: rgba(255, 255, 255, 0.6); font-size: 12.5px; font-weight: 500; }
+.glass-input { width: 100%; height: 46px; padding: 0 14px; margin-bottom: 16px; font-size: 15px; font-family: inherit;
+  color: #141916; background: #eef3f6; border: 1px solid transparent; border-radius: 10px; outline: none; box-sizing: border-box; }
+.glass-input::placeholder { color: #9aa5a0; }
+.glass-input:focus { border-color: #45c58a; box-shadow: 0 0 0 3px rgba(69, 197, 138, 0.25); background: #fff; }
+.glass-input:-webkit-autofill { -webkit-text-fill-color: #141916; -webkit-box-shadow: 0 0 0 60px #eef3f6 inset; }
+.glass-password { position: relative; margin-bottom: 16px; }
+.glass-password .glass-input { margin-bottom: 0; padding-right: 44px; }
+.glass-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: #6b726c; cursor: pointer; border-radius: 8px; }
+.glass-eye:hover { color: #1a5c3e; background: rgba(26, 92, 62, 0.08); }
+.glass-check { display: flex; align-items: center; gap: 8px; margin: 0 0 20px; color: rgba(255, 255, 255, 0.7); font-size: 13px; cursor: pointer; }
+.glass-check input { width: 16px; height: 16px; accent-color: #45c58a; }
+.glass-submit { width: 100%; height: 48px; font-size: 15px; font-weight: 650; color: #fff; background: linear-gradient(135deg, #1e7a4f, #14532d); border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 8px 24px rgba(20, 122, 79, 0.4); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.glass-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(20, 122, 79, 0.5); }
+.glass-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+.glass-secure { margin: 18px 0 0; text-align: center; color: rgba(255, 255, 255, 0.45); font-size: 12px; }
+.glass-foot { margin: 10px 0 0; text-align: center; color: rgba(255, 255, 255, 0.4); font-size: 12px; }
+@media (max-width: 760px) {
+  .glass-card { grid-template-columns: 1fr; }
+  .glass-brand { padding: 28px 24px; }
+  .glass-brand-inner h2 { font-size: 24px; margin-bottom: 0; }
+  .glass-brand-inner p, .glass-logo { display: none; }
+  .glass-logo { display: flex; margin-bottom: 12px; }
+  .glass-form { padding: 28px 22px; }
+}
 .login-page { min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, 440px); background: #f7f5f2; }
 .login-visual { position: relative; background-color: #2a241c;   background-image: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=75'); background-size: cover; background-position: center 35%; display: flex; align-items: flex-end; padding: clamp(2rem, 5vw, 3.25rem); overflow: hidden; }
 .login-visual-shade { position: absolute; inset: 0; background: linear-gradient(165deg, rgba(15,18,14,0.15) 0%, rgba(15,18,14,0.25) 40%, rgba(12,14,11,0.72) 100%); }
