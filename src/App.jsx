@@ -21,6 +21,7 @@ function Shell() {
   const [authErr, setAuthErr] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const [mode, setMode] = useState('signin');
   const [remember, setRemember] = useState(() => { try { return !!localStorage.getItem('luk54_remember'); } catch (e) { return false; } });
   const [collapsed, setCollapsed] = useState(false);
   const [actions, setActions] = useState(null);
@@ -98,6 +99,19 @@ function Shell() {
     e.preventDefault();
     setAuthErr('');
     setAuthBusy(true);
+    if (mode === 'signup') {
+      const { error } = await supabase.auth.signUp(auth);
+      setAuthBusy(false);
+      if (error) setAuthErr(error.message);
+      else {
+        setActor(auth.email, '');
+        audit('SIGNUP', 'auth', '', 'Self-registered account, awaiting role');
+        setAuthErr('');
+        toast('success', 'Account created — confirm the email, then ask the Admin for a role');
+        setMode('signin');
+      }
+      return;
+    }
     const { error } = await supabase.auth.signInWithPassword(auth);
     setAuthBusy(false);
     if (error) setAuthErr(error.message);
@@ -130,7 +144,7 @@ function Shell() {
           </div>
           <div className="glass-form">
             <h2>Welcome back</h2>
-            <p className="glass-sub">Sign in to continue to your farm</p>
+            <p className="glass-sub">{mode === 'signup' ? 'Create your farm account' : 'Sign in to continue to your farm'}</p>
             <form onSubmit={login}>
               {authErr && <div className="form-error-global">{authErr}</div>}
               <label className="glass-label">Email</label>
@@ -153,8 +167,15 @@ function Shell() {
                 <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
                 <span>Remember email</span>
               </label>
-              <button className="glass-submit" disabled={authBusy}>{authBusy ? 'Signing in…' : 'Sign in'}</button>
+              <button className="glass-submit" disabled={authBusy}>{authBusy ? (mode === 'signup' ? 'Creating…' : 'Signing in…') : (mode === 'signup' ? 'Create account' : 'Sign in')}</button>
             </form>
+            <p className="glass-foot">
+              {mode === 'signup' ? (
+                <span>Have an account? <button type="button" className="btn btn-ghost btn-sm" style={{ color: '#a7e3c3', height: 'auto', padding: '0 4px' }} onClick={() => setMode('signin')}>Sign in</button></span>
+              ) : (
+                <span>New here? <button type="button" className="btn btn-ghost btn-sm" style={{ color: '#a7e3c3', height: 'auto', padding: '0 4px' }} onClick={() => setMode('signup')}>Create account</button></span>
+              )}
+            </p>
             <p className="glass-secure">🔒 Encrypted &nbsp;•&nbsp; Role-based access</p>
             <p className="glass-foot">Need access? Contact your administrator</p>
           </div>
