@@ -291,6 +291,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
       <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Quick Actions</h3></div>
         <div className="card-body" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {(role === 'admin' || role === 'operating_partner') && <button className="btn btn-primary btn-sm" onClick={() => onNavigate('operations')}>Log Daily Production</button>}
           {(role === 'admin' || role === 'investment_partner') && <button className="btn btn-primary btn-sm" onClick={() => onNavigate('finance')}>Add Capital</button>}
           <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('finance')}>Review Funding</button>
         </div>

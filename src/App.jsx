@@ -4,6 +4,7 @@ import { ConfirmProvider, Field, ToastProvider, useToast } from './components/ui
 import { MobileNav, Sidebar, Topbar } from './components/shell.jsx';
 import Finance from './tabs/Finance.jsx';
 import Dashboard from './tabs/Dashboard.jsx';
+import Operations from './tabs/Operations.jsx';
 
 const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partner', investment_partner: 'Investment Partner' };
 
@@ -21,7 +22,7 @@ function Shell() {
 
   function navigate(to) {
     setActions(null);
-    if (to === 'finance' || to === 'dashboard') setModule(to);
+    if (to === 'finance' || to === 'dashboard' || to === 'operations') setModule(to);
     else toast('error', to + ' lands in the next update');
   }
 
@@ -123,12 +124,12 @@ function Shell() {
       <Sidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSoon={soon}
         module={module} onNavigate={navigate} />
       <div className={'main-wrapper' + (collapsed ? ' wide' : '')}>
-        <Topbar title={module === 'dashboard' ? 'Overview' : 'Finance'}
+        <Topbar title={module === 'dashboard' ? 'Overview' : module === 'operations' ? 'Operations' : 'Finance'}
           onMenu={() => setCollapsed(!collapsed)}
           email={session.user.email} roleLabel={ROLE_LABEL[profile.role] || profile.role}
           onSignOut={() => supabase.auth.signOut()} />
         <div className="page-root" key={module}>
-          {module === 'dashboard' ? (
+          {module === 'dashboard' && (
             <>
               <div className="page-header">
                 <div className="page-header-title">
@@ -140,7 +141,21 @@ function Shell() {
               </div>
               <Dashboard role={profile.role} onNavigate={navigate} setActions={setActions} />
             </>
-          ) : (
+          )}
+          {module === 'operations' && (
+            <>
+              <div className="page-header">
+                <div className="page-header-title">
+                  <div className="breadcrumb"><span>Main</span><span>/</span><span>Operations</span></div>
+                  <h1>Operations</h1>
+                  <p className="u-text-secondary u-text-sm">Daily farm operations</p>
+                </div>
+                <div className="page-header-actions">{actions}</div>
+              </div>
+              <Operations role={profile.role} setActions={setActions} />
+            </>
+          )}
+          {module === 'finance' && (
             <>
               <div className="page-header">
                 <div className="page-header-title">

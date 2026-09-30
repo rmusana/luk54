@@ -9,6 +9,7 @@ const P = (d, extra) => (
 export const Icon = {
   dashboard: <>{P(<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>, 'nav-icon')}</>,
   finance: <>{P(<><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" /><path d="M3 5v14a2 2 0 0 0 2 2h16v-5" /><path d="M18 12a2 2 0 0 0 0 4h4v-4Z" /></>, 'nav-icon')}</>,
+  ops: <>{P(<><rect width="8" height="4" x="8" y="2" rx="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><path d="M12 11h4" /><path d="M12 16h4" /><path d="M8 11h.01" /><path d="M8 16h.01" /></>, 'nav-icon')}</>,
   reports: <>{P(<><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" /></>, 'nav-icon')}</>,
   bell: <>{P(<><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></>, 'nav-icon')}</>,
   docs: <>{P(<><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></>, 'nav-icon')}</>,
@@ -52,6 +53,10 @@ export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate }) {
         <div className="nav-section">
           <div className="nav-section-title">Overview</div>
           {item(Icon.dashboard, 'Dashboard', module === 'dashboard', () => onNavigate('dashboard'))}
+        </div>
+        <div className="nav-section">
+          <div className="nav-section-title">Operations</div>
+          {item(Icon.ops, 'Operations', module === 'operations', () => onNavigate('operations'))}
         </div>
         <div className="nav-section">
           <div className="nav-section-title">Finance</div>
@@ -113,6 +118,7 @@ export function MobileNav({ onSoon, module, onNavigate }) {
   return (
     <nav className="mobile-nav">
       <button className={'mobile-nav-item' + (module === 'dashboard' ? ' active' : '')} onClick={() => onNavigate('dashboard')}>{Icon.dashboard}<span>Dashboard</span></button>
+      <button className={'mobile-nav-item' + (module === 'operations' ? ' active' : '')} onClick={() => onNavigate('operations')}>{Icon.ops}<span>Ops</span></button>
       <button className={'mobile-nav-item' + (module === 'finance' ? ' active' : '')} onClick={() => onNavigate('finance')}>{Icon.finance}<span>Finance</span></button>
       <button className="mobile-nav-item" onClick={soon('Reports')}>{Icon.reports}<span>Reports</span></button>
       <button className="mobile-nav-item" onClick={soon('Documents')}>{Icon.docs}<span>Docs</span></button>
