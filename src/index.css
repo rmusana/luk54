@@ -274,8 +274,9 @@ body { margin: 0; font-family: var(--font-sans); background: var(--color-bg); co
   .login-visual { min-height: 200px; padding: 1.25rem 1.35rem; }
 }
 @media print {
-  .top-strip, .tabs-bar, .page-header-actions { display: none !important; }
-  .page { max-width: none; padding: 0; }
+  .sidebar, .topbar, .mobile-nav, .tabs-bar, .pill-tabs, .page-header-actions { display: none !important; }
+  .main-wrapper, .main-wrapper.wide { margin-left: 0 !important; }
+  .page-root { max-width: none; padding: 0; }
 }
 /* ── App shell: sidebar + topbar + mobile nav (mirrors original) ── */
 .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-width); background: var(--color-bg-elevated); border-right: 1px solid var(--color-border); display: flex; flex-direction: column; z-index: var(--z-sidebar); transition: width var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out); }

@@ -5,6 +5,7 @@ import { MobileNav, Sidebar, Topbar } from './components/shell.jsx';
 import Finance from './tabs/Finance.jsx';
 import Dashboard from './tabs/Dashboard.jsx';
 import Operations from './tabs/Operations.jsx';
+import Reports from './tabs/Reports.jsx';
 
 const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partner', investment_partner: 'Investment Partner' };
 
@@ -27,7 +28,7 @@ function Shell() {
       toast('error', 'Operations is not available to Investment Partners');
       return;
     }
-    if (to === 'finance' || to === 'dashboard' || to === 'operations') setModule(to);
+    if (to === 'finance' || to === 'dashboard' || to === 'operations' || to === 'reports') setModule(to);
     else toast('error', to + ' lands in the next update');
   }
 
@@ -150,7 +151,7 @@ function Shell() {
       <Sidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSoon={soon}
         module={module} onNavigate={navigate} role={profile.role} />
       <div className={'main-wrapper' + (collapsed ? ' wide' : '')}>
-        <Topbar title={module === 'dashboard' ? 'Overview' : module === 'operations' ? 'Operations' : 'Finance'}
+        <Topbar title={module === 'dashboard' ? 'Overview' : module === 'operations' ? 'Operations' : module === 'reports' ? 'Reports' : 'Finance'}
           onMenu={() => setCollapsed(!collapsed)}
           email={session.user.email} roleLabel={ROLE_LABEL[profile.role] || profile.role}
           onSignOut={() => supabase.auth.signOut()} />
@@ -179,6 +180,19 @@ function Shell() {
                 <div className="page-header-actions">{actions}</div>
               </div>
               <Operations role={profile.role} setActions={setActions} />
+            </>
+          )}
+          {module === 'reports' && (
+            <>
+              <div className="page-header">
+                <div className="page-header-title">
+                  <div className="breadcrumb"><span>Main</span><span>/</span><span>Reports</span></div>
+                  <h1>Reports</h1>
+                  <p className="u-text-secondary u-text-sm">Statements and audit packs for any period</p>
+                </div>
+                <div className="page-header-actions">{actions}</div>
+              </div>
+              <Reports setActions={setActions} />
             </>
           )}
           {module === 'finance' && (
