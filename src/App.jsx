@@ -22,6 +22,23 @@ function Shell() {
   const [collapsed, setCollapsed] = useState(false);
   const [actions, setActions] = useState(null);
   const [module, setModule] = useState('dashboard');
+  const [bellAlerts, setBellAlerts] = useState([]);
+
+  async function loadBell(uid, role) {
+    if (role !== 'admin' && role !== 'operating_partner') { setBellAlerts([]); return; }
+    const { data } = await supabase.from('alerts').select('id,priority,title')
+      .eq('project_id', 'LUK54').in('status', ['Open', 'Acknowledged'])
+      .order('created_at', { ascending: false }).limit(10);
+    const rank = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+    setBellAlerts([...(data || [])].sort((a, b) => (rank[a.priority] ?? 9) - (rank[b.priority] ?? 9)));
+  }
+
+  useEffect(() => {
+    if (!session || !profile) return;
+    loadBell(session.user.id, profile.role);
+    const t = setInterval(() => loadBell(session.user.id, profile.role), 5 * 60 * 1000);
+    return () => clearInterval(t);
+  }, [session, profile]);
 
   function navigate(to) {
     setActions(null);
@@ -159,7 +176,8 @@ function Shell() {
         <Topbar title={module === 'dashboard' ? 'Overview' : module === 'operations' ? 'Operations' : module === 'reports' ? 'Reports' : module === 'alerts' ? 'Alerts' : 'Finance'}
           onMenu={() => setCollapsed(!collapsed)}
           email={session.user.email} roleLabel={ROLE_LABEL[profile.role] || profile.role}
-          onSignOut={() => supabase.auth.signOut()} />
+          onSignOut={() => supabase.auth.signOut()}
+          alerts={bellAlerts} onOpenAlerts={() => navigate('alerts')} />
         <div className="page-root" key={module}>
           {module === 'dashboard' && (
             <>

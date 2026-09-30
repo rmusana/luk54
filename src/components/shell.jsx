@@ -86,9 +86,12 @@ export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate, rol
   );
 }
 
-export function Topbar({ title, onMenu, email, roleLabel, onSignOut }) {
+export function Topbar({ title, onMenu, email, roleLabel, onSignOut, alerts, onOpenAlerts }) {
   const [open, setOpen] = React.useState(false);
+  const [bellOpen, setBellOpen] = React.useState(false);
   const initials = (email || 'U').slice(0, 2).toUpperCase();
+  const openCount = (alerts || []).length;
+  const canAlerts = roleLabel !== 'Investment Partner';
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -96,7 +99,29 @@ export function Topbar({ title, onMenu, email, roleLabel, onSignOut }) {
         <span style={{ fontWeight: 600 }}>{title}</span>
       </div>
       <div className="topbar-right">
-        <button className="icon-btn" aria-label="Notifications">{Icon.bell}</button>
+        {canAlerts && (
+        <div style={{ position: 'relative' }}>
+          <button className="icon-btn" onClick={() => setBellOpen(!bellOpen)} aria-label="Notifications">
+            {Icon.bell}
+            {openCount > 0 && <span className="badge-dot" />}
+          </button>
+          {bellOpen && (
+            <div className="card" style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: 320, maxWidth: '80vw', padding: 6, zIndex: 50 }}>
+              <div style={{ padding: '8px 10px', fontSize: 12, fontWeight: 700 }}>Notifications{openCount > 0 ? ' (' + openCount + ')' : ''}</div>
+              {!openCount && <div style={{ padding: '8px 10px', fontSize: 12, color: 'var(--color-text-muted)' }}>All clear — no open alerts.</div>}
+              {(alerts || []).slice(0, 4).map((a) => (
+                <button key={a.id} className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start', height: 'auto', padding: '8px 10px', whiteSpace: 'normal', textAlign: 'left' }}
+                  onClick={() => { setBellOpen(false); onOpenAlerts(); }}>
+                  <span className={'badge badge-' + (a.priority === 'Critical' ? 'critical' : a.priority === 'High' ? 'caution' : 'neutral')}>{a.priority}</span>
+                  <span style={{ fontSize: 12 }}>{a.title}</span>
+                </button>
+              ))}
+              <button className="btn btn-secondary btn-sm" style={{ width: '100%', marginTop: 4 }}
+                onClick={() => { setBellOpen(false); onOpenAlerts(); }}>View all alerts</button>
+            </div>
+          )}
+        </div>
+        )}
         <div style={{ position: 'relative' }}>
           <button className="user-chip" onClick={() => setOpen(!open)} aria-label="Account">
             <span className="user-avatar">{initials}</span>
