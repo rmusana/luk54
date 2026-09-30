@@ -230,7 +230,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
 
       <div className="card" style={{ padding: 'var(--space-5)', marginBottom: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'var(--color-accent-soft)', color: 'var(--color-accent)', display: 'grid', placeItems: 'center', width: 38 }}>{Icon.package}</div>
+            <div style={{ width: 38, height: 38, borderRadius: 12, background: 'var(--color-accent-soft)', color: 'var(--color-accent)', display: 'grid', placeItems: 'center' }}>{Icon.package}</div>
           <div style={{ flex: 1 }}>
             <h3 style={{ margin: 0, fontSize: 14 }}>Egg Trays — Stock Balance</h3>
             <p className="u-text-xs u-text-muted" style={{ margin: '2px 0 0' }}>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
+import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, formatUGX, todayEAT } from '../../lib/format.js';
 import { DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
 
@@ -59,7 +60,7 @@ export default function FeedTab({ setActions, writable = true }) {
     if (!ok) return;
     const { error } = await supabase.from('feed_purchases').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Feed purchase deleted'); load(); }
+    else { audit('DELETE', 'feed_purchases', row.id, 'Deleted purchase ' + (row.product || '')); toast('success', 'Feed purchase deleted'); load(); }
   }
 
   async function delMix(row) {
@@ -67,7 +68,7 @@ export default function FeedTab({ setActions, writable = true }) {
     if (!ok) return;
     const { error } = await supabase.from('weekly_feed_mix').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Weekly mix deleted'); load(); }
+    else { audit('DELETE', 'weekly_feed_mix', row.id, 'Deleted mix ' + (row.week_start || '')); toast('success', 'Weekly mix deleted'); load(); }
   }
 
   return (
@@ -160,6 +161,7 @@ function PurchaseForm({ inv, onClose, onSaved }) {
       await supabase.from('feed_inventory').insert({ project_id: 'LUK54', product: f.product, closing_stock: qty, purchases: qty, unit_cost: unit });
     }
     setBusy(false);
+    audit('CREATE', 'feed_purchases', '', 'Purchase ' + f.product + ' ' + f.qty_kg + 'kg on ' + f.date);
     toast('success', 'Feed purchase recorded');
     onSaved();
   }
@@ -191,10 +193,10 @@ function MixForm({ onClose, onSaved }) {
     setBusy(true);
     const payload = { project_id: 'LUK54', week_start: f.week_start, week_end: f.week_end || null, total_kg: total, notes: f.notes || '' };
     MIX_FIELDS.forEach(([k]) => { payload[k] = Number(f[k]) || 0; });
-    const { error } = await supabase.from('weekly_feed_mix').insert(payload);
+    const { data: insData, error } = await supabase.from('weekly_feed_mix').insert(payload).select('id').single();
     setBusy(false);
     if (error) toast('error', error.message);
-    else { toast('success', 'Weekly mix saved (total calculated from ingredients)'); onSaved(); }
+    else { audit('CREATE', 'weekly_feed_mix', insData?.id, 'Mix week ' + f.week_start + ' total ' + total + 'kg'); toast('success', 'Weekly mix saved (total calculated from ingredients)'); onSaved(); }
   }
 
   return (

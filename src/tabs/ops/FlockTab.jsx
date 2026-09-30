@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
+import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, todayEAT } from '../../lib/format.js';
 import { DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
 
@@ -40,6 +41,7 @@ export default function FlockTab({ setActions, writable = true }) {
       if (error) { toast('error', error.message); setSaving(false); return; }
     }
     setSaving(false);
+    audit('UPDATE', 'flock_sections', '', 'Sections saved — total ' + formatNumber(total) + ' birds');
     toast('success', 'Sections saved — total ' + formatNumber(total) + ' birds');
     load();
   }
@@ -49,7 +51,7 @@ export default function FlockTab({ setActions, writable = true }) {
     if (!ok) return;
     const { error } = await supabase.from('flock_events').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Event deleted'); load(); }
+    else { audit('DELETE', 'flock_events', row.id, 'Deleted event ' + (row.event_type || '')); toast('success', 'Event deleted'); load(); }
   }
 
   return (
@@ -98,13 +100,13 @@ function FlockForm({ onClose, onSaved }) {
   async function save() {
     if (!f.date || !f.quantity) { toast('error', 'Date and quantity are required'); return; }
     setBusy(true);
-    const { error } = await supabase.from('flock_events').insert({
+    const { data: insData, error } = await supabase.from('flock_events').insert({
       project_id: 'LUK54', date: f.date, event_type: f.event_type,
       quantity: Number(f.quantity) || 0, notes: f.notes || '',
-    });
+    }).select('id').single();
     setBusy(false);
     if (error) toast('error', error.message);
-    else { toast('success', 'Flock event saved'); onSaved(); }
+    else { audit('CREATE', 'flock_events', insData?.id, f.event_type + ' ' + f.quantity + ' on ' + f.date); toast('success', 'Flock event saved'); onSaved(); }
   }
 
   return (

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
+import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, todayEAT } from '../../lib/format.js';
 import { DataTable, Field, Gauge, Modal, Sparkline, useConfirm, useToast } from '../../components/ui.jsx';
 
@@ -35,7 +36,7 @@ export default function DailyTab({ setActions, writable = true }) {
     if (!ok) return;
     const { error } = await supabase.from('daily_production').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Daily log deleted'); load(); }
+    else { audit('DELETE', 'daily_production', row.id, 'Deleted log ' + (row.date || '')); toast('success', 'Daily log deleted'); load(); }
   }
 
   const latest = rows[0] || {};
@@ -139,10 +140,10 @@ function DailyForm({ onClose, onSaved }) {
       feed_issued_kg: Number(f.feed_issued_kg) || 0,
       notes: f.notes || '',
     };
-    const { error } = await supabase.from('daily_production').insert(payload);
+    const { data: insData, error } = await supabase.from('daily_production').insert(payload).select('id').single();
     setBusy(false);
     if (error) toast('error', error.message);
-    else { toast('success', 'Daily log saved'); onSaved(); }
+    else { audit('CREATE', 'daily_production', insData?.id, 'Log ' + f.date + ' ' + (f.section || '') + ' eggs ' + (trays * TRAY) + ' mort ' + mort); toast('success', 'Daily log saved'); onSaved(); }
   }
 
   return (

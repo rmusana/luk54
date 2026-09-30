@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
+import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, formatUGX } from '../../lib/format.js';
 import { BUDGET_SEED, canWrite, cashflowEvents, computeAllocation, sum } from '../../lib/finance.js';
 import { Badge, DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
@@ -105,7 +106,7 @@ export function AllocationSec({ role, data, setActions }) {
     }, { onConflict: 'project_id,month' });
     setBusy(false);
     if (error) toast('error', error.message);
-    else toast('success', 'Allocation finalized for ' + month);
+    else { audit('FINALIZE', 'revenue_allocations', month, 'Allocation finalized for ' + month + ', net ' + Math.round(calc.netProfitToInvestor)); toast('success', 'Allocation finalized for ' + month); }
   }
 
   return (
@@ -155,14 +156,14 @@ export function ProfitSec({ role, data, setActions, onChanged }) {
       status: 'Paid', paid_date: new Date().toISOString().slice(0, 10),
     }).eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Marked paid'); onChanged(); }
+    else { audit('UPDATE', 'profit_distributions', row.id, 'Marked paid: ' + row.amount + ' for ' + row.month); toast('success', 'Marked paid'); onChanged(); }
   }
   async function onDelete(row) {
     const ok = await confirm({ title: 'Delete distribution', message: 'Delete this distribution?', confirmLabel: 'Delete', danger: true });
     if (!ok) return;
     const { error } = await supabase.from('profit_distributions').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Deleted'); onChanged(); }
+    else { audit('DELETE', 'profit_distributions', row.id, 'Deleted distribution ' + row.amount + ' for ' + row.month); toast('success', 'Deleted'); onChanged(); }
   }
 
   return (
@@ -193,14 +194,14 @@ function DistributionForm({ onClose, onSaved }) {
   async function save() {
     if (!f.month || !f.amount) { toast('error', 'Month and amount are required'); return; }
     setBusy(true);
-    const { error } = await supabase.from('profit_distributions').insert({
+    const { data: insData, error } = await supabase.from('profit_distributions').insert({
       project_id: 'LUK54', month: f.month, amount: Number(f.amount) || 0,
       paid_date: f.paid_date || '', reference: f.reference || '',
       status: f.paid_date ? 'Paid' : 'Pending',
-    });
+    }).select('id').single();
     setBusy(false);
     if (error) toast('error', error.message);
-    else { toast('success', 'Distribution recorded'); onSaved(); }
+    else { audit('CREATE', 'profit_distributions', insData?.id, 'Distribution ' + f.amount + ' for ' + f.month); toast('success', 'Distribution recorded'); onSaved(); }
   }
   return (
     <Modal title="Record profit distribution" onClose={onClose}

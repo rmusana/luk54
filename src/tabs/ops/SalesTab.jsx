@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
+import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, formatUGX, todayEAT } from '../../lib/format.js';
 import { DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
 
@@ -36,7 +37,7 @@ export default function SalesTab({ setActions, writable = true }) {
     if (!ok) return;
     const { error } = await supabase.from('sales').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Sale deleted'); load(); }
+    else { audit('DELETE', 'sales', row.id, 'Deleted sale ' + (row.date || '')); toast('success', 'Sale deleted'); load(); }
   }
 
   const total = rows.reduce((s, r) => s + Number(r.total_revenue || 0), 0);
@@ -102,7 +103,7 @@ function SaleForm({ onClose, onSaved }) {
     }
     const trays = Number(f.quantity_trays) || 0;
     const price = Number(f.unit_price) || 0;
-    const { error } = await supabase.from('sales').insert({
+    const { data: insData, error } = await supabase.from('sales').insert({
       project_id: 'LUK54', date: f.date, customer: f.customer || '',
       quantity_trays: trays, quantity_eggs: trays * TRAY, unit_price: price,
       total_revenue: trays * price, sale_category: f.sale_category, egg_type: f.egg_type,
@@ -110,10 +111,10 @@ function SaleForm({ onClose, onSaved }) {
       breakage_trays_sold: Number(f.breakage_trays_sold) || 0,
       damaged_trays_sold: Number(f.damaged_trays_sold) || 0,
       lost_trays: Number(f.lost_trays) || 0, notes: f.notes || '', document_id: documentId,
-    });
+    }).select('id').single();
     setBusy(false);
     if (error) toast('error', error.message);
-    else { toast('success', 'Sale recorded'); onSaved(); }
+    else { audit('CREATE', 'sales', insData?.id, 'Sale ' + trays + ' trays UGX ' + (trays * price) + ' on ' + f.date); toast('success', 'Sale recorded'); onSaved(); }
   }
 
   return (

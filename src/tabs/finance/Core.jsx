@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
+import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, formatPercent, formatUGX, todayEAT } from '../../lib/format.js';
 import { BUDGET_SEED, CAPITAL_PURPOSES, EXPENSE_CATEGORIES, canWrite, cashflowEvents, computeAllocation, financialSummary, forecast, isCommercial, matchBudgetLine, sum } from '../../lib/finance.js';
 import { Badge, DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
@@ -168,7 +169,7 @@ export function CapitalSec({ role, setActions, autoOpen }) {
     if (!ok) return;
     const { error } = await supabase.from('capital_contributions').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Deleted'); reload(); }
+    else { audit('DELETE', 'capital_contributions', row.id, 'Deleted disbursement ' + row.amount + ' on ' + row.date); toast('success', 'Deleted'); reload(); }
   }
   const total = sum(rows, 'amount');
   return (
@@ -208,13 +209,13 @@ function CapitalForm({ onClose, onSaved }) {
       try { documentId = await uploadReceipt(file, setLabel); setLabel('Saving…'); }
       catch (e) { setBusy(false); toast('error', e.message || 'Upload failed'); return; }
     }
-    const { error } = await supabase.from('capital_contributions').insert({
+    const { data: insData, error } = await supabase.from('capital_contributions').insert({
       project_id: 'LUK54', date: f.date, amount: Number(f.amount) || 0,
       purpose: f.purpose || 'General', reference: f.reference || '', document_id: documentId,
-    });
+    }).select('id').single();
     setBusy(false);
     if (error) toast('error', error.message);
-    else { toast('success', 'Disbursement recorded'); onSaved(); }
+    else { audit('CREATE', 'capital_contributions', insData?.id, 'Disbursement ' + f.amount + ' on ' + f.date + ' (' + (f.purpose || 'General') + ')'); toast('success', 'Disbursement recorded'); onSaved(); }
   }
   return (
     <Modal title="Record disbursement" onClose={onClose}
@@ -251,7 +252,7 @@ export function ExpensesSec({ role, setActions, data }) {
     if (!ok) return;
     const { error } = await supabase.from('expenses').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Deleted'); reload(); }
+    else { audit('DELETE', 'expenses', row.id, 'Deleted expense ' + row.category + ' ' + row.amount); toast('success', 'Deleted'); reload(); }
   }
   const total = sum(rows, 'amount');
   return (
@@ -295,11 +296,12 @@ function ExpenseForm({ onClose, onSaved }) {
       catch (e) { setBusy(false); toast('error', e.message || 'Upload failed'); return; }
     }
     const amount = Number(f.amount) || 0;
-    const { error } = await supabase.from('expenses').insert({
+    const { data: insData, error } = await supabase.from('expenses').insert({
       project_id: 'LUK54', date: f.date, category: f.category, sub_category: f.sub_category || '',
       amount, supplier: f.supplier || '', document_id: documentId, notes: f.notes || '',
-    });
+    }).select('id').single();
     if (error) { setBusy(false); toast('error', error.message); return; }
+    audit('CREATE', 'expenses', insData?.id, 'Expense ' + f.category + ' ' + amount + ' on ' + f.date);
     // mirror updateBudgetActual: category + sub-item substring, fallback category-only
     try {
       const { data: lines } = await supabase.from('budget_lines').select('*').eq('project_id', 'LUK54');

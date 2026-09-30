@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
+import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, formatUGX, todayEAT } from '../../lib/format.js';
 import { DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
 
@@ -69,7 +70,7 @@ function InventoryForm({ onClose, onSaved }) {
       { onConflict: 'project_id,name' });
     setBusy(false);
     if (error) toast('error', error.message);
-    else { toast('success', 'Inventory updated'); onSaved(); }
+    else { audit('UPDATE', 'inventory', '', 'Adjusted ' + f.name + ' to ' + f.quantity); toast('success', 'Inventory updated'); onSaved(); }
   }
   return (
     <Modal title="Adjust inventory" onClose={onClose}
@@ -105,7 +106,7 @@ export function WorkersTab({ setActions, writable = true }) {
     if (!ok) return;
     const { error } = await supabase.from('workers').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Worker deleted'); load(); }
+    else { audit('DELETE', 'workers', row.id, 'Removed worker ' + (row.name || '')); toast('success', 'Worker deleted'); load(); }
   }
   return (
     <>
@@ -141,12 +142,12 @@ function WorkerForm({ existing, onClose, onSaved }) {
     if (!f.name) { toast('error', 'Worker name is required'); return; }
     setBusy(true);
     const payload = { project_id: 'LUK54', name: f.name, payroll: Number(f.payroll) || 0, bonus: Number(f.bonus) || 0, advance: Number(f.advance) || 0, notes: f.notes || '' };
-    const { error } = existing
-      ? await supabase.from('workers').update(payload).eq('id', existing.id)
-      : await supabase.from('workers').insert(payload);
+    const { data: insData, error } = existing
+      ? await supabase.from('workers').update(payload).eq('id', existing.id).select('id').single()
+      : await supabase.from('workers').insert(payload).select('id').single();
     setBusy(false);
     if (error) toast('error', error.message);
-    else { toast('success', 'Worker saved'); onSaved(); }
+    else { audit(existing ? 'UPDATE' : 'CREATE', 'workers', insData?.id || existing?.id, (existing ? 'Edited ' : 'Added ') + f.name); toast('success', 'Worker saved'); onSaved(); }
   }
   return (
     <Modal title={existing ? 'Edit worker' : 'Add worker'} onClose={onClose}
@@ -186,7 +187,7 @@ export function NotesTab({ setActions, writable = true }) {
     if (!ok) return;
     const { error } = await supabase.from('staff_notes').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Note deleted'); load(); }
+    else { audit('DELETE', 'staff_notes', row.id, 'Deleted note'); toast('success', 'Note deleted'); load(); }
   }
   return (
     <>
@@ -213,10 +214,10 @@ function NoteForm({ onClose, onSaved }) {
   async function save() {
     if (!f.content) { toast('error', 'Note text is required'); return; }
     setBusy(true);
-    const { error } = await supabase.from('staff_notes').insert({ project_id: 'LUK54', date: f.date, content: f.content, category: f.category });
+    const { data: insData, error } = await supabase.from('staff_notes').insert({ project_id: 'LUK54', date: f.date, content: f.content, category: f.category }).select('id').single();
     setBusy(false);
     if (error) toast('error', error.message);
-    else { toast('success', 'Note saved'); onSaved(); }
+    else { audit('CREATE', 'staff_notes', insData?.id, f.category + ' note on ' + f.date); toast('success', 'Note saved'); onSaved(); }
   }
   return (
     <Modal title="Staff note" onClose={onClose}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
+import { audit } from '../../lib/audit.js';
 import { formatDate, todayEAT } from '../../lib/format.js';
 import { Badge, DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
 
@@ -44,7 +45,7 @@ export default function HealthTab({ setActions, writable = true }) {
     if (!ok) return;
     const { error } = await supabase.from('health_events').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Record deleted'); load(); }
+    else { audit('DELETE', 'health_events', row.id, 'Deleted treatment ' + (row.product || '')); toast('success', 'Record deleted'); load(); }
   }
 
   async function onDeleteSched(row) {
@@ -52,14 +53,14 @@ export default function HealthTab({ setActions, writable = true }) {
     if (!ok) return;
     const { error } = await supabase.from('vaccination_schedule').delete().eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Schedule item deleted'); load(); }
+    else { audit('DELETE', 'vaccination_schedule', row.id, 'Deleted schedule ' + (row.vaccine || '')); toast('success', 'Schedule item deleted'); load(); }
   }
 
   async function markDone(row) {
     const next = row.status === 'Completed' ? 'Pending' : 'Completed';
     const { error } = await supabase.from('vaccination_schedule').update({ status: next }).eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', row.vaccine + ' marked ' + next); load(); }
+    else { audit('UPDATE', 'vaccination_schedule', row.id, row.vaccine + ' marked ' + next); toast('success', row.vaccine + ' marked ' + next); load(); }
   }
 
   const now = new Date();
@@ -155,12 +156,12 @@ function ScheduleForm({ existing, onClose, onSaved }) {
       vaccine: f.vaccine, planned_date: f.planned_date || null,
       status: f.status, notes: f.notes || '',
     };
-    const { error } = existing
-      ? await supabase.from('vaccination_schedule').update(payload).eq('id', existing.id)
-      : await supabase.from('vaccination_schedule').insert(payload);
+    const { data: insData, error } = existing
+      ? await supabase.from('vaccination_schedule').update(payload).eq('id', existing.id).select('id').single()
+      : await supabase.from('vaccination_schedule').insert(payload).select('id').single();
     setBusy(false);
     if (error) toast('error', error.message);
-    else { toast('success', existing ? 'Schedule item updated' : 'Schedule item added'); onSaved(); }
+    else { audit(existing ? 'UPDATE' : 'CREATE', 'vaccination_schedule', insData?.id || existing?.id, (existing ? 'Updated ' : 'Added ') + f.vaccine); toast('success', existing ? 'Schedule item updated' : 'Schedule item added'); onSaved(); }
   }
 
   return (
@@ -215,10 +216,10 @@ function HealthForm({ onClose, onSaved }) {
     }
     if (!type || !product) { toast('error', 'Type and product required'); return; }
     setBusy(true);
-    const { error } = await supabase.from('health_events').insert({
+    const { data: insData, error } = await supabase.from('health_events').insert({
       project_id: 'LUK54', date: f.date, type, product,
       notes: f.notes || '',
-    });
+    }).select('id').single();
     if (!error && type === 'Vaccination' && f.week) {
       await supabase.from('vaccination_schedule')
         .update({ status: 'Completed' })
@@ -226,7 +227,7 @@ function HealthForm({ onClose, onSaved }) {
     }
     setBusy(false);
     if (error) toast('error', error.message);
-    else { toast('success', 'Treatment logged'); onSaved(); }
+    else { audit('CREATE', 'health_events', insData?.id, type + ' ' + product + ' on ' + f.date); toast('success', 'Treatment logged'); onSaved(); }
   }
 
   return (

@@ -70,10 +70,12 @@ export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate, rol
           {item(Icon.reports, 'Reports', module === 'reports', () => onNavigate('reports'))}
           {(role === 'admin' || role === 'operating_partner') && item(Icon.bell, 'Alerts', module === 'alerts', () => onNavigate('alerts'))}
           {item(Icon.docs, 'Documents', module === 'documents', () => onNavigate('documents'))}
-        </div>
-        <div className="nav-section">
-          <div className="nav-section-title">System</div>
-          {item(Icon.settings, 'Settings', false, soon('Settings'))}
+          {role === 'admin' && (
+          <div className="nav-section">
+            <div className="nav-section-title">System</div>
+            {item(Icon.settings, 'Settings', module === 'settings', () => onNavigate('settings'))}
+          </div>
+          )}
         </div>
       </nav>
       <div className="sidebar-footer">

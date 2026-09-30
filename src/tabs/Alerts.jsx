@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { formatDate } from '../lib/format.js';
 import { listAlerts, runEngine, visibleToRole } from '../lib/alerts.js';
+import { audit } from '../lib/audit.js';
 import { Badge, useToast } from '../components/ui.jsx';
 
 export default function Alerts({ role, setActions }) {
@@ -47,7 +48,7 @@ export default function Alerts({ role, setActions }) {
     const { supabase } = await import('../lib/supabaseClient.js');
     const { error } = await supabase.from('alerts').update(patch).eq('id', row.id);
     if (error) toast('error', error.message);
-    else { toast('success', status === 'Resolved' ? 'Alert resolved' : 'Alert acknowledged'); load(); }
+    else { audit(status === 'Resolved' ? 'RESOLVE' : 'ACK', 'alerts', row.id, row.title); toast('success', status === 'Resolved' ? 'Alert resolved' : 'Alert acknowledged'); load(); }
   }
 
   const openCount = rows.filter((a) => String(a.status).toLowerCase() === 'open').length;

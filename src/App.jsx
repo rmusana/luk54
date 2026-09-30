@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from './lib/supabaseClient.js';
 import { ConfirmProvider, Field, ToastProvider, useToast } from './components/ui.jsx';
+import { audit, setActor } from './lib/audit.js';
 import { MobileNav, Sidebar, Topbar } from './components/shell.jsx';
 import Finance from './tabs/Finance.jsx';
 import Dashboard from './tabs/Dashboard.jsx';
@@ -8,6 +9,7 @@ import Operations from './tabs/Operations.jsx';
 import Reports from './tabs/Reports.jsx';
 import Alerts from './tabs/Alerts.jsx';
 import Documents from './tabs/Documents.jsx';
+import Settings from './tabs/Settings.jsx';
 
 const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partner', investment_partner: 'Investment Partner' };
 
@@ -52,7 +54,8 @@ function Shell() {
       return;
     }
     if (to === 'finance' || to === 'dashboard' || to === 'operations' || to === 'reports' || to === 'alerts' || to === 'documents') setModule(to);
-    else toast('error', to + ' lands in the next update');
+    else if (to === 'settings' && profile?.role === 'admin') setModule(to);
+    else if (to === 'settings') toast('error', 'Settings is for Administrators');
   }
 
   useEffect(() => {
@@ -61,7 +64,7 @@ function Shell() {
   }, []);
 
   useEffect(() => {
-    if (profile?.role === 'investment_partner' && (module === 'operations' || module === 'alerts')) setModule('dashboard');
+    if (profile?.role === 'investment_partner' && (module === 'operations' || module === 'alerts' || module === 'settings')) setModule('dashboard');
   }, [profile, module]);
 
   useEffect(() => {
@@ -71,21 +74,22 @@ function Shell() {
     } catch (e) {}
   }, []);
 
-  async function loadProfile(uid) {
+  async function loadProfile(uid, email) {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
     if (error) { setProfile(null); return; }
     setProfile(data);
+    setActor(email || data.email, data.role);
   }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      if (data.session) loadProfile(data.session.user.id);
+      if (data.session) loadProfile(data.session.user.id, data.session.user.email);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
-      if (s) loadProfile(s.user.id);
-      else setProfile(null);
+      if (s) loadProfile(s.user.id, s.user.email);
+      else { setProfile(null); setActor('', ''); }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -102,6 +106,8 @@ function Shell() {
         if (remember) localStorage.setItem('luk54_remember', auth.email);
         else localStorage.removeItem('luk54_remember');
       } catch (e) {}
+      setActor(auth.email, '');
+      audit('LOGIN', 'auth', '', 'Sign-in from ' + (navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop'));
       toast('success', 'Signed in');
     }
   }
@@ -243,6 +249,19 @@ function Shell() {
                 <div className="page-header-actions">{actions}</div>
               </div>
               <Documents role={profile.role} email={session.user.email} setActions={setActions} />
+            </>
+          )}
+          {module === 'settings' && profile?.role === 'admin' && (
+            <>
+              <div className="page-header">
+                <div className="page-header-title">
+                  <div className="breadcrumb"><span>System</span><span>/</span><span>Settings</span></div>
+                  <h1>Settings</h1>
+                  <p className="u-text-secondary u-text-sm">Project parameters, users and system preferences</p>
+                </div>
+                <div className="page-header-actions">{actions}</div>
+              </div>
+              <Settings setActions={setActions} />
             </>
           )}
           {module === 'finance' && (

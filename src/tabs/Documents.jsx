@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient.js';
+import { audit } from '../lib/audit.js';
 import { formatDate, formatNumber } from '../lib/format.js';
 import { DataTable, Field, Modal, useConfirm, useToast } from '../components/ui.jsx';
 
@@ -16,7 +17,7 @@ export default function Documents({ role, email, setActions }) {
   const [preview, setPreview] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [coverage, setCoverage] = useState(null);
-  const canDelete = role === 'admin' || role === 'operating_partner';
+  const canDelete = role === 'admin';
 
   async function load() {
     setLoading(true);
@@ -68,7 +69,7 @@ export default function Documents({ role, email, setActions }) {
     } catch (e) { /* file may already be gone */ }
     const { error } = await supabase.from('documents').delete().eq('id', doc.id);
     if (error) toast('error', error.message);
-    else { toast('success', 'Document deleted'); setPreview(null); load(); }
+    else { audit('DELETE', 'documents', doc.id, 'Deleted ' + doc.name); toast('success', 'Document deleted'); setPreview(null); load(); }
   }
 
   const list = filter === 'all' ? docs : docs.filter((d) => d.category === filter);
@@ -158,13 +159,14 @@ function UploadForm({ email, onClose, onSaved }) {
       const path = 'LUK54/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const { error: upErr } = await supabase.storage.from('receipts').upload(path, file);
       if (upErr) throw upErr;
-      const { error: dbErr } = await supabase.from('documents').insert({
+      const { data: insData, error: dbErr } = await supabase.from('documents').insert({
         project_id: 'LUK54', name: file.name, path,
         size_bytes: file.size || 0, mime_type: file.type || '',
         category: f.category, linked_table: '', linked_id: f.linked || '',
         notes: f.notes || '', uploaded_by: email || '',
-      });
+      }).select('id').single();
       if (dbErr) throw dbErr;
+      audit('UPLOAD', 'documents', insData?.id, file.name + ' (' + f.category + ')');
       toast('success', 'Document uploaded');
       onSaved();
     } catch (e) {
