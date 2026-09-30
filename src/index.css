@@ -75,6 +75,27 @@
 * { box-sizing: border-box; }
 body { margin: 0; font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); }
 .u-text-secondary { color: var(--color-text-secondary); }
+.u-font-medium { font-weight: 500; }
+.u-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kpi-card.kpi-primary { border-color: var(--color-accent); box-shadow: 0 2px 12px rgba(26,92,62,0.08); }
+.kpi-card { position: relative; overflow: hidden; }
+.kpi-card.clickable { cursor: pointer; transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
+.kpi-card.clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.kpi-card .chev { position: absolute; right: 12px; top: 14px; width: 14px; height: 14px; opacity: 0.18; }
+.kpi-trend { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs); font-weight: 500; }
+.kpi-trend.up { color: var(--color-positive); }
+.kpi-trend.down { color: var(--color-critical); }
+.kpi-trend svg { width: 14px; height: 14px; }
+.insight-card { padding: var(--space-4); border-radius: var(--radius-lg); border: 1px solid var(--color-border); background: var(--color-bg-elevated); display: flex; gap: var(--space-3); }
+.insight-card .insight-icon { width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.insight-card .insight-icon svg { width: 18px; height: 18px; }
+.insight-card.positive .insight-icon { background: var(--color-positive-soft); color: var(--color-positive); }
+.insight-card.caution .insight-icon { background: var(--color-caution-soft); color: var(--color-caution); }
+.insight-card.critical .insight-icon { background: var(--color-critical-soft); color: var(--color-critical); }
+.insight-card.info .insight-icon { background: var(--color-info-soft); color: var(--color-info); }
+.insight-text { font-size: var(--text-sm); color: var(--color-text-secondary); line-height: 1.65; }
+.act-icon { width: 32px; height: 32px; border-radius: 10px; background: var(--color-bg-subtle); display: flex; align-items: center; justify-content: center; color: var(--color-text-secondary); flex-shrink: 0; }
+.act-icon svg { width: 16px; height: 16px; }
 .u-text-muted { color: var(--color-text-muted); }
 .u-text-sm { font-size: var(--text-sm); }
 .u-text-xs { font-size: var(--text-xs); }

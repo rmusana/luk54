@@ -138,7 +138,7 @@ function Shell() {
                 </div>
                 <div className="page-header-actions">{actions}</div>
               </div>
-              <Dashboard role={profile.role} onNavigate={navigate} />
+              <Dashboard role={profile.role} onNavigate={navigate} setActions={setActions} />
             </>
           ) : (
             <>

@@ -91,7 +91,7 @@ export function computeHealthScore(m) {
 
 const sum = (rows, k) => rows.reduce((s, r) => s + Number(r[k] || 0), 0);
 
-export function computeSummary({ capital, expenses, sales, daily, budgetLines }) {
+export function computeSummary({ capital, expenses, sales, daily, budgetLines, criticalAlerts = 0 }) {
   const cap = sum(capital, 'amount');
   const exp = sum(expenses, 'amount');
   const revenue = sum(sales, 'total_revenue');
@@ -114,7 +114,7 @@ export function computeSummary({ capital, expenses, sales, daily, budgetLines })
   const healthScore = computeHealthScore({
     productionPercent: production.layingPercent, mortalityRate: mortality.rate,
     feedEfficiency: feed.efficiencyScore, budgetAdherence: budget.adherence,
-    capitalRecovery: roi, openCriticalAlerts: 0,
+    capitalRecovery: roi, openCriticalAlerts: criticalAlerts,
   });
 
   return {
@@ -129,7 +129,7 @@ export function computeSummary({ capital, expenses, sales, daily, budgetLines })
     currentWeek: production.week, birdCount: production.birds,
     mortalityRate: mortality.rate, mortalityCount: mortality.count,
     feedDaysRemaining: feed.daysRemaining, feedEfficiency: feed.kgPerDozen,
-    openAlerts: 0, criticalAlerts: 0,
+    openAlerts: 0, criticalAlerts,
     eggTrend: production.trend, mortalityTrend: mortality.trend,
   };
 }
@@ -157,12 +157,49 @@ export function buildInsights(s) {
   else if (s.fundedPct === 100) insights.push({ severity: 'positive', text: 'Funding is fully subscribed at 100% — UGX ' + Math.round(s.totalInvestment).toLocaleString() + ' received.' });
 
   if (s.roi != null && s.commercialReached) insights.push({ severity: s.roi >= 0 ? 'positive' : 'caution', text: 'ROI stands at ' + s.roi + '% based on net profit attributable to the Investment Partner.' });
+  if (s.criticalAlerts > 0) insights.push({ severity: 'critical', text: s.criticalAlerts + ' critical alert(s) require immediate attention.' });
   if (insights.length === 0) insights.push({ severity: 'info', text: 'Awaiting operational data. Log daily production, feed and expenses to generate live intelligence.' });
   return insights.slice(0, 8);
 }
 
-export function recentActivity({ daily, capital, sales }) {
-  const items = [];
+/* Live alert rules (client-side engine until Alerts module lands) */
+export function deriveAlerts({ daily, allocations, summary }) {
+  const alerts = [];
+  const sorted = [...(daily || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+  sorted.slice(0, 7).forEach((r) => {
+    const o = Number(r.opening_birds) || 0, m = Number(r.mortality) || 0;
+    if (o > 0 && m / o > 0.01) {
+      alerts.push({ priority: 'Critical', title: 'Abnormal mortality',
+        reason: m + ' birds lost on ' + String(r.date).slice(0, 10) + ' (' + (Math.round((m / o) * 1000) / 10) + '%)' });
+    }
+  });
+  if (summary.productionPercent != null && summary.productionPercent < 80) {
+    alerts.push({ priority: 'Critical', title: 'Production below threshold',
+      reason: 'Production is at ' + summary.productionPercent + '%, below the 80% off-lay threshold.' });
+  }
+  if (summary.mortalityRate != null && summary.mortalityRate > 2) {
+    alerts.push({ priority: 'High', title: 'Elevated mortality',
+      reason: 'Cumulative mortality rate is ' + summary.mortalityRate + '%. Investigate causes and biosecurity.' });
+  }
+  if (summary.outstandingFunding > 0) {
+    alerts.push({ priority: 'High', title: 'Funding required',
+      reason: 'Outstanding funding requirement is UGX ' + Math.round(summary.outstandingFunding).toLocaleString() });
+  }
+  const now = new Date();
+  const lmKey = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 7);
+  const finalized = (allocations || []).some((a) => String(a.month).slice(0, 7) === lmKey);
+  if (!finalized) {
+    const overdue = now.getDate() > 10;
+    alerts.push({ priority: overdue ? 'Critical' : 'Medium',
+      title: 'Monthly statement ' + (overdue ? 'overdue' : 'due'),
+      reason: 'Investment Statement for ' + lmKey + (overdue ? ' is overdue' : ' is due by the 10th') });
+  }
+  const rank = { Critical: 0, High: 1, Medium: 2 };
+  alerts.sort((a, b) => (rank[a.priority] ?? 3) - (rank[b.priority] ?? 3));
+  return alerts.slice(0, 8);
+}
+
+export function recentActivity({ daily, capital, sales }) {  const items = [];
   [...daily].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5).forEach((r) => {
     items.push({ type: 'production', title: 'Daily production logged', detail: (r.eggs_collected || 0) + ' eggs · mortality ' + (r.mortality || 0), date: String(r.date).slice(0, 10) });
   });

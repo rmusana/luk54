@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { supabase } from '../lib/supabaseClient.js';
 import { formatDate, formatNumber, formatPercent, formatUGX } from '../lib/format.js';
-import { buildInsights, computeSummary, recentActivity } from '../lib/dashboard.js';
+import { buildInsights, computeSummary, deriveAlerts, recentActivity } from '../lib/dashboard.js';
 import { Badge, useToast } from '../components/ui.jsx';
+import { Icon } from '../components/shell.jsx';
 
 Chart.register(...registerables);
 
@@ -14,35 +15,61 @@ function healthLabel(score) {
   return { text: 'Weak', cls: 'critical' };
 }
 
-export default function Dashboard({ role, onNavigate }) {
+const SEV_ICON = { positive: Icon.check, caution: Icon.warn, critical: Icon.octagon, info: Icon.info };
+
+export default function Dashboard({ role, onNavigate, setActions }) {
   const toast = useToast();
   const [summary, setSummary] = useState(null);
   const [insights, setInsights] = useState([]);
   const [activity, setActivity] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+  const [trays, setTrays] = useState(null);
   const [eat, setEat] = useState('--:--');
+  const [tick, setTick] = useState(0);
   const eggRef = useRef(null);
   const capRef = useRef(null);
   const charts = useRef([]);
 
+  useEffect(() => {
+    setActions(
+      <button className="btn btn-secondary btn-sm" onClick={() => setTick((t) => t + 1)}>Refresh</button>
+    );
+    return () => setActions(null);
+  }, []);
+
   async function load() {
     charts.current.forEach((c) => { try { c.destroy(); } catch (e) {} });
     charts.current = [];
-    const [cap, exp, sales, bud, daily] = await Promise.all([
+    const [cap, exp, sales, bud, daily, alloc] = await Promise.all([
       supabase.from('capital_contributions').select('*').limit(500),
       supabase.from('expenses').select('*').limit(500),
       supabase.from('sales').select('*').limit(500),
       supabase.from('budget_lines').select('*').limit(200),
       supabase.from('daily_production').select('*').order('date').limit(500),
+      supabase.from('revenue_allocations').select('*').limit(100),
     ]);
-    const err = [cap, exp, sales, bud, daily].map((r) => r.error).filter(Boolean)[0];
+    const err = [cap, exp, sales, bud, daily, alloc].map((r) => r.error).filter(Boolean)[0];
     if (err) { toast('error', err.message); return; }
-    const s = computeSummary({
+    const base = {
       capital: cap.data || [], expenses: exp.data || [], sales: sales.data || [],
       daily: daily.data || [], budgetLines: bud.data || [],
-    });
+    };
+    const pass1 = computeSummary({ ...base, criticalAlerts: 0 });
+    const al = deriveAlerts({ daily: base.daily, allocations: alloc.data || [], summary: pass1 });
+    const crit = al.filter((a) => a.priority === 'Critical').length;
+    const s = computeSummary({ ...base, criticalAlerts: crit });
+    s.openAlerts = al.length; s.criticalAlerts = crit;
     setSummary(s);
+    setAlerts(al);
     setInsights(buildInsights(s));
-    setActivity(recentActivity({ daily: daily.data || [], capital: cap.data || [], sales: sales.data || [] }));
+    setActivity(recentActivity(base));
+    const D = base.daily, S = base.sales;
+    setTrays({
+      collected: D.reduce((x, r) => x + Number(r.eggs_trays ?? (Number(r.eggs_collected || 0) / 30)), 0),
+      sold: S.reduce((x, r) => x + Number(r.quantity_trays ?? (Number(r.quantity_eggs || 0) / 30)), 0),
+      breakages: D.reduce((x, r) => x + Number(r.breakages || 0) / 30, 0),
+      lost: 0, damaged: 0, logs: D.length, sales: S.length,
+    });
     drawCharts(s);
   }
 
@@ -82,18 +109,18 @@ export default function Dashboard({ role, onNavigate }) {
 
   useEffect(() => {
     load();
-    const tick = () => { try { setEat(new Date().toLocaleString('en-GB', { timeZone: 'Africa/Kampala', hour: '2-digit', minute: '2-digit' })); } catch (e) {} };
-    tick();
-    const t = setInterval(tick, 30000);
+    const tickClock = () => { try { setEat(new Date().toLocaleString('en-GB', { timeZone: 'Africa/Kampala', hour: '2-digit', minute: '2-digit' })); } catch (e) {} };
+    tickClock();
+    const t = setInterval(tickClock, 30000);
     return () => { clearInterval(t); charts.current.forEach((c) => { try { c.destroy(); } catch (e) {} }); };
-  }, []);
+  }, [tick]);
 
   const kpis = summary ? [
-    { label: 'Total Investment', value: formatUGX(summary.totalInvestment), insight: 'Total capital contributed', nav: 'finance' },
+    { label: 'Total Investment', value: formatUGX(summary.totalInvestment), insight: 'Total capital contributed', nav: 'finance', primary: role === 'investment_partner' },
     { label: 'Total Expenses', value: formatUGX(summary.totalExpenses), insight: 'Cumulative expenditure', nav: 'finance' },
     { label: 'Gross Revenue', value: formatUGX(summary.revenue), insight: summary.commercialReached ? 'Egg sales' : 'Allocation not yet active', nav: 'finance', primary: role === 'investment_partner' },
     { label: 'Net Profit (Investor)', value: formatUGX(summary.netProfit), insight: 'After feed + operator share', nav: 'finance', primary: role === 'investment_partner' },
-    { label: 'ROI', value: formatPercent(summary.roi), insight: 'Net profit ÷ capital', nav: 'finance' },
+    { label: 'ROI', value: formatPercent(summary.roi), insight: 'Net profit ÷ capital', nav: 'finance', trend: summary.roi > 0 ? { direction: 'up', label: 'vs capital' } : null },
     { label: 'Cash Position', value: formatUGX(summary.cashPosition), insight: 'Capital − expenses + net', nav: 'finance' },
     { label: 'Outstanding Funding', value: formatUGX(summary.outstandingFunding), insight: summary.outstandingFunding > 0 ? 'Additional capital may be required' : 'Within estimate', nav: 'finance' },
     { label: 'Production', value: summary.productionPercent != null ? formatPercent(summary.productionPercent) : '—', insight: 'Target 88–92% · ≥85% commercial', nav: null },
@@ -104,6 +131,7 @@ export default function Dashboard({ role, onNavigate }) {
 
   const hl = healthLabel(summary?.healthScore);
   const ring = hl.cls === 'positive' ? 'var(--color-positive)' : hl.cls === 'caution' ? 'var(--color-caution)' : hl.cls === 'critical' ? 'var(--color-critical)' : 'var(--color-text-muted)';
+  const netTrays = trays ? Math.max(0, trays.collected - trays.sold - trays.lost - trays.damaged - trays.breakages) : 0;
 
   return (
     <>
@@ -122,9 +150,10 @@ export default function Dashboard({ role, onNavigate }) {
       </div>
 
       <div className="card" style={{ padding: 18, marginBottom: 18, overflow: 'hidden', position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(600px 200px at 20% 0%, rgba(26,92,62,0.06), transparent 60%)', pointerEvents: 'none' }} />
         {!summary ? <div className="skeleton" style={{ height: 72 }} /> : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap', position: 'relative' }}>
-            <div style={{ position: 'relative', width: 96, height: 96, flexShrink: 0 }}>
+            <div style={{ position: 'relative', width: 96, height: 96, flexShrink: 0, filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.08))' }}>
               <svg viewBox="0 0 36 36" style={{ width: 96, height: 96, transform: 'rotate(-90deg)' }}>
                 <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--color-border)" strokeWidth="3" />
                 <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={ring} strokeWidth="3.2" strokeDasharray={(summary.healthScore != null ? summary.healthScore : 0) + ',100'} strokeLinecap="round" />
@@ -133,14 +162,16 @@ export default function Dashboard({ role, onNavigate }) {
                 <span style={{ fontSize: 22, fontWeight: 800 }}>{summary.healthScore ?? '—'}</span>
                 <span style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Health</span>
               </div>
+              <span style={{ position: 'absolute', top: -4, right: -4, width: 14, height: 14, background: ring, border: '2px solid var(--color-bg-elevated)', borderRadius: '50%', boxShadow: '0 0 0 4px ' + ring + '20' }} />
             </div>
             <div style={{ flex: 1, minWidth: 220 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <h2 style={{ fontSize: 16, margin: 0 }}>Investment Health</h2>
                 <Badge tone={hl.cls === 'neutral' ? 'neutral' : hl.cls}>{hl.text}</Badge>
+                <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--color-text-muted)' }}>Updated {new Date().toLocaleDateString()}</span>
               </div>
               <p className="u-text-sm u-text-secondary" style={{ maxWidth: 620, lineHeight: 1.6 }}>
-                {summary.healthScore != null ? 'Composite of production, mortality, feed efficiency, budget adherence, capital recovery — ' + (hl.cls === 'positive' ? 'on track.' : hl.cls === 'caution' ? 'needs attention.' : 'requires action.') : 'Score populates once production, feed and financial records are available.'}
+                {summary.healthScore != null ? 'Composite of production, mortality, feed efficiency, budget adherence, capital recovery and alerts — ' + (hl.cls === 'positive' ? 'on track.' : hl.cls === 'caution' ? 'needs attention.' : 'requires action.') : 'Score populates once production, feed and financial records are available.'}
               </p>
               <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
                 <span className="u-text-xs" style={{ background: 'var(--color-bg-subtle)', padding: '6px 10px', borderRadius: 999 }}>Week {summary.currentWeek ?? '—'} · {formatNumber(summary.birdCount)} birds</span>
@@ -169,13 +200,38 @@ export default function Dashboard({ role, onNavigate }) {
 
       <div className="kpi-grid" style={{ marginBottom: 18 }}>
         {summary ? kpis.map((it) => (
-          <div className={'card kpi-card' + (it.primary ? ' kpi-primary' : '')} key={it.label}
-            onClick={() => it.nav && onNavigate(it.nav)} style={it.nav ? { cursor: 'pointer' } : undefined}>
+          <div className={'card kpi-card' + (it.primary ? ' kpi-primary' : '') + (it.nav ? ' clickable' : '')} key={it.label}
+            onClick={() => it.nav && onNavigate(it.nav)}>
             <div className="kpi-label">{it.label}</div>
             <div className="kpi-value">{it.value ?? '—'}</div>
+            {it.trend && <div className={'kpi-trend ' + it.trend.direction}>{it.trend.direction === 'up' ? Icon.trendUp : Icon.trendDown}<span>{it.trend.label}</span></div>}
             <div className="kpi-insight">{it.insight || ''}</div>
+            {it.nav && <span className="chev">›</span>}
           </div>
         )) : <div className="skeleton" style={{ height: 120 }} />}
+      </div>
+
+      <div className="card" style={{ padding: 'var(--space-5)', marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'var(--color-accent-soft)', color: 'var(--color-accent)', display: 'grid', placeItems: 'center', width: 38 }}>{Icon.package}</div>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: 0, fontSize: 14 }}>Egg Trays — Stock Balance</h3>
+            <p className="u-text-xs u-text-muted" style={{ margin: '2px 0 0' }}>
+              {trays ? 'From daily logs and sales · ' + trays.logs + ' logs · ' + trays.sales + ' sales' : 'Loading…'}
+            </p>
+          </div>
+          {trays && <Badge tone="neutral">{formatNumber(trays.collected, 1) + ' trays collected'}</Badge>}
+        </div>
+        {!trays ? <div className="skeleton" style={{ height: 120 }} /> : (
+          <div className="kpi-grid">
+            <div className="card kpi-card" style={{ borderLeft: '3px solid var(--color-accent)' }}><div className="kpi-label">Collected</div><div className="kpi-value">{formatNumber(trays.collected, 1)}</div><div className="kpi-insight">Daily log · trays</div></div>
+            <div className="card kpi-card"><div className="kpi-label">Sold</div><div className="kpi-value">{formatNumber(trays.sold, 1)}</div><div className="kpi-insight">Sales · trays</div></div>
+            <div className="card kpi-card"><div className="kpi-label">Breakages</div><div className="kpi-value">{formatNumber(trays.breakages, 1)}</div><div className="kpi-insight">Eggs/30 · daily</div></div>
+            <div className="card kpi-card"><div className="kpi-label">Lost / Exchange</div><div className="kpi-value">{formatNumber(trays.lost, 1)}</div><div className="kpi-insight">Daily lost + sales lost</div></div>
+            <div className="card kpi-card"><div className="kpi-label">Damaged</div><div className="kpi-value">{formatNumber(trays.damaged, 1)}</div><div className="kpi-insight">Sales damaged trays</div></div>
+            <div className="card kpi-card" style={{ background: 'var(--color-bg-subtle)', borderColor: 'var(--color-accent)' }}><div className="kpi-label">Net Available</div><div className="kpi-value">{formatNumber(netTrays, 1)}</div><div className="kpi-insight">Collected − sold − lost − damaged − breakages</div></div>
+          </div>
+        )}
       </div>
 
       <div className="grid-2" style={{ marginBottom: 18 }}>
@@ -184,15 +240,34 @@ export default function Dashboard({ role, onNavigate }) {
           <div className="card-body">
             {!summary ? <div className="skeleton" style={{ height: 120 }} /> : insights.length ? insights.map((ins, i) => (
               <div className={'insight-card ' + (ins.severity || 'info')} style={{ marginBottom: 10 }} key={i}>
-                <div className="insight-text">{ins.text}</div>
+                <div className="insight-icon">{SEV_ICON[ins.severity] || Icon.info}</div>
+                <div style={{ flex: 1 }}>
+                  <div className="insight-text">{ins.text}</div>
+                  <button className="btn btn-ghost btn-sm" style={{ marginTop: 6, fontSize: 11 }}
+                    onClick={() => onNavigate(ins.severity === 'critical' ? 'alerts' : 'reports')}>
+                    View {ins.severity === 'critical' ? 'alerts' : 'report'} →
+                  </button>
+                </div>
               </div>
             )) : <div className="empty-state" style={{ padding: 18 }}><p className="empty-state-desc">No insights yet.</p></div>}
           </div>
         </div>
         <div className="card">
-          <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Active Alerts</h3></div>
+          <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Active Alerts</h3>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('alerts')}>View all</button></div>
           <div className="card-body">
-            <div className="empty-state" style={{ padding: 14 }}><p className="empty-state-desc">No open alerts — alert engine lands in the next update.</p></div>
+            {!summary ? <div className="skeleton" style={{ height: 100 }} /> : alerts.length ? alerts.slice(0, 5).map((a, i) => {
+              const badge = a.priority === 'Critical' ? 'critical' : a.priority === 'High' ? 'caution' : 'neutral';
+              return (
+                <div style={{ padding: '8px 0', borderBottom: '1px solid var(--color-border)' }} key={i}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <Badge tone={badge}>{a.priority}</Badge>
+                    <span className="u-text-sm u-font-medium u-truncate">{a.title}</span>
+                  </div>
+                  <div className="u-text-xs u-text-muted">{a.reason}</div>
+                </div>
+              );
+            }) : <div className="empty-state" style={{ padding: 14 }}><p className="empty-state-desc">No open alerts</p></div>}
           </div>
         </div>
       </div>
@@ -202,8 +277,9 @@ export default function Dashboard({ role, onNavigate }) {
         <div className="card-body" style={{ maxHeight: 280, overflowY: 'auto' }}>
           {!summary ? <div className="skeleton" style={{ height: 100 }} /> : activity.length ? activity.map((a, i) => (
             <div style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--color-border)' }} key={i}>
+              <div className="act-icon">{a.type === 'capital' ? Icon.banknote : a.type === 'sale' ? Icon.cart : Icon.reports}</div>
               <div style={{ minWidth: 0 }}>
-                <div className="u-text-sm">{a.title}</div>
+                <div className="u-text-sm u-font-medium u-truncate">{a.title}</div>
                 <div className="u-text-xs u-text-muted">{a.detail}</div>
                 <div className="u-text-xs u-text-muted">{formatDate(a.date)}</div>
               </div>
