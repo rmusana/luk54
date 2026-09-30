@@ -58,7 +58,7 @@ export default function Reports({ setActions }) {
                 style={{ textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer' }}
                 onClick={() => { setType(r.id); setReport(null); }}>
                 <div className="kpi-label" style={{ fontWeight: 700, color: 'var(--color-text)' }}>{r.name}</div>
-                <div className="kpi-insight">{r.desc}</div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: 4, lineHeight: 1.65 }}>{r.desc}</div>
               </button>
             ))}
           </div>
