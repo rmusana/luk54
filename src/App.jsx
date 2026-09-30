@@ -15,7 +15,6 @@ function Shell() {
   const [authErr, setAuthErr] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
   const [showPw, setShowPw] = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem('luk54_theme') || 'dark');
   const [collapsed, setCollapsed] = useState(false);
   const [actions, setActions] = useState(null);
   const [module, setModule] = useState('dashboard');
@@ -27,9 +26,9 @@ function Shell() {
   }
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('luk54_theme', theme);
-  }, [theme]);
+    document.documentElement.setAttribute('data-theme', 'dark');
+    try { localStorage.setItem('luk54_theme', 'dark'); } catch (e) {}
+  }, []);
 
   async function loadProfile(uid) {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
@@ -124,8 +123,7 @@ function Shell() {
       <Sidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSoon={soon}
         module={module} onNavigate={navigate} />
       <div className={'main-wrapper' + (collapsed ? ' wide' : '')}>
-        <Topbar title={module === 'dashboard' ? 'Overview' : 'Finance'} theme={theme}
-          onTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        <Topbar title={module === 'dashboard' ? 'Overview' : 'Finance'}
           onMenu={() => setCollapsed(!collapsed)}
           email={session.user.email} roleLabel={ROLE_LABEL[profile.role] || profile.role}
           onSignOut={() => supabase.auth.signOut()} />

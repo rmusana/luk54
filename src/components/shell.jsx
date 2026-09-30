@@ -67,7 +67,7 @@ export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate }) {
   );
 }
 
-export function Topbar({ title, theme, onTheme, onMenu, email, roleLabel, onSignOut }) {
+export function Topbar({ title, onMenu, email, roleLabel, onSignOut }) {
   const [open, setOpen] = React.useState(false);
   const initials = (email || 'U').slice(0, 2).toUpperCase();
   return (
@@ -77,9 +77,6 @@ export function Topbar({ title, theme, onTheme, onMenu, email, roleLabel, onSign
         <span style={{ fontWeight: 600 }}>{title}</span>
       </div>
       <div className="topbar-right">
-        <button className="icon-btn" onClick={onTheme} aria-label="Toggle theme">
-          {theme === 'dark' ? Icon.sun : Icon.moon}
-        </button>
         <button className="icon-btn" aria-label="Notifications">{Icon.bell}</button>
         <div style={{ position: 'relative' }}>
           <button className="user-chip" onClick={() => setOpen(!open)} aria-label="Account">
