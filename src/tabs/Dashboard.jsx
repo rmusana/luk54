@@ -3,6 +3,7 @@ import { Chart, registerables } from 'chart.js';
 import { supabase } from '../lib/supabaseClient.js';
 import { formatDate, formatNumber, formatPercent, formatUGX } from '../lib/format.js';
 import { buildInsights, computeSummary, recentActivity } from '../lib/dashboard.js';
+import { getMissingDays } from '../lib/gaps.js';
 import { runEngine, visibleToRole } from '../lib/alerts.js';
 import { Badge, useToast } from '../components/ui.jsx';
 import { Icon } from '../components/shell.jsx';
@@ -147,6 +148,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
   ] : [];
 
   const hl = healthLabel(summary?.healthScore);
+  const missed = summary ? getMissingDays(summary.eggTrend.map((t) => ({ date: t.date }))) : [];
   const ring = hl.cls === 'positive' ? 'var(--color-positive)' : hl.cls === 'caution' ? 'var(--color-caution)' : hl.cls === 'critical' ? 'var(--color-critical)' : 'var(--color-text-muted)';
   const netTrays = trays ? Math.max(0, trays.collected - trays.sold - trays.lost - trays.damaged - trays.breakages) : 0;
 
@@ -162,6 +164,12 @@ export default function Dashboard({ role, onNavigate, setActions }) {
           <span className="u-text-muted">•</span><span>{summary ? formatNumber(summary.birdCount) + ' birds' : '— birds'}</span>
         </div>
         <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+          {missed.length > 0 && (
+            <button className="btn btn-sm" style={{ background: 'var(--color-critical-soft)', color: 'var(--color-critical)', marginRight: 8 }}
+              onClick={() => onNavigate('operations')}>
+              ⚠ {missed.length} day{missed.length > 1 ? 's' : ''} missed
+            </button>
+          )}
           {summary?.currentWeek ? 'Week ' + summary.currentWeek + ' · ' + (summary.commercialReached ? 'Commercial active' : 'Pre-commercial') : ''}
         </div>
       </div>

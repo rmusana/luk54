@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
 import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, todayEAT } from '../../lib/format.js';
+import { canLogDate, getMissingDays } from '../../lib/gaps.js';
 import { DataTable, Field, Gauge, Modal, Sparkline, useConfirm, useToast } from '../../components/ui.jsx';
 
 const TRAY = 30;
@@ -16,6 +17,14 @@ export default function DailyTab({ setActions, writable = true }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [presetDate, setPresetDate] = useState(null);
+  const missing = getMissingDays(rows);
+  const missingKey = missing.join(',');
+
+  function openForm(date) {
+    setPresetDate(date || null);
+    setShowForm(true);
+  }
 
   async function load() {
     setLoading(true);
@@ -27,9 +36,10 @@ export default function DailyTab({ setActions, writable = true }) {
   useEffect(() => { load(); }, []);
 
   useEffect(() => {
-    setActions(<button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Log Day</button>);
+    if (!writable) { setActions(null); return () => setActions(null); }
+    setActions(<button className="btn btn-primary btn-sm" onClick={() => openForm(missing[0])}>+ Log Day</button>);
     return () => setActions(null);
-  }, []);
+  }, [missingKey]);
 
   async function onDelete(row) {
     const ok = await confirm({ title: 'Delete daily log', message: 'Delete the log for ' + (row.date || 'this day') + '? This cannot be undone.', confirmLabel: 'Delete', danger: true });
@@ -55,6 +65,17 @@ export default function DailyTab({ setActions, writable = true }) {
 
   return (
     <>
+      {missing.length > 0 && (
+        <div className="card pad-4 mb-4" style={{ borderColor: 'var(--color-critical)', background: 'var(--color-critical-soft)' }}>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
+            ⚠ {missing.length} day{missing.length > 1 ? 's' : ''} missing: {missing.map(formatDate).join(' · ')}
+          </div>
+          <div className="u-text-xs u-text-secondary" style={{ marginBottom: 8 }}>
+            Days must be logged in order — {writable ? 'fill ' + formatDate(missing[0]) + ' first before any newer day.' : 'ask the Operating Partner to backfill.'}
+          </div>
+          {writable && <button className="btn btn-primary btn-sm" onClick={() => openForm(missing[0])}>Log {formatDate(missing[0])} now</button>}
+        </div>
+      )}
       <div className="hero">
         <Gauge pct={pct} />
         <div style={{ flex: 1, minWidth: 180 }}>
@@ -88,17 +109,19 @@ export default function DailyTab({ setActions, writable = true }) {
         />
       )}
       {showForm && <DailyForm
-        onClose={() => setShowForm(false)}
-        onSaved={() => { setShowForm(false); load(); }}
+        initialDate={presetDate}
+        existingRows={rows}
+        onClose={() => { setShowForm(false); setPresetDate(null); }}
+        onSaved={() => { setShowForm(false); setPresetDate(null); load(); }}
       />}
     </>
   );
 }
 
-function DailyForm({ onClose, onSaved }) {
+function DailyForm({ onClose, onSaved, initialDate, existingRows }) {
   const toast = useToast();
   const [sections, setSections] = useState([{ section_id: 'Combined', label: 'Combined', bird_count: 0 }]);
-  const [f, setF] = useState({ date: todayEAT(), section: 'Combined', opening_birds: '0', mortality: '0', closing_birds: '', eggs_trays: '0', breakages: '0', eggs_lost: '0', feed_issued_kg: '0', notes: '' });
+  const [f, setF] = useState({ date: initialDate || todayEAT(), section: 'Combined', opening_birds: '0', mortality: '0', closing_birds: '', eggs_trays: '0', breakages: '0', eggs_lost: '0', feed_issued_kg: '0', notes: '' });
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
@@ -123,6 +146,8 @@ function DailyForm({ onClose, onSaved }) {
 
   async function save() {
     if (!f.date || f.opening_birds === '') { toast('error', 'Date and opening birds are required'); return; }
+    const gate = canLogDate(existingRows || [], f.date);
+    if (!gate.ok) { toast('error', gate.reason); return; }
     setBusy(true);
     const opening = Number(f.opening_birds) || 0;
     const mort = Number(f.mortality) || 0;

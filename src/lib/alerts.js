@@ -113,14 +113,13 @@ export async function runEngine(onProgress) {
       action: 'Review flock health, feed and environment', type: 'Production' });
   }
 
-  // 6. missing daily (yesterday)
-  const y = new Date();
-  y.setDate(y.getDate() - 1);
-  const yStr = y.toISOString().slice(0, 10);
-  if (daily.length > 0 && !daily.some((r) => T(r.date) === yStr)) {
-    await push({ priority: 'Medium', title: 'Missing daily production entry',
-      reason: 'No production log found for ' + yStr,
-      action: 'Complete the Daily Log for yesterday', deadline: yStr, type: 'Operations' });
+  // 6. missing daily logs — every gap, not just yesterday
+  const { getMissingDays } = await import('./gaps.js');
+  const missing = getMissingDays(daily);
+  if (missing.length > 0) {
+    await push({ priority: missing.length >= 3 ? 'High' : 'Medium', title: 'Missing daily production entries',
+      reason: missing.length + ' day(s) not logged: ' + missing.join(', ') + ' — backfill in order before newer days',
+      action: 'Open Operations → Daily Log and fill the missing days', deadline: missing[0], type: 'Operations' });
   }
 
   // 7. funding required
