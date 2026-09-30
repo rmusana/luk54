@@ -21,7 +21,7 @@ export const Icon = {
   plus: <>{P(<><path d="M5 12h14" /><path d="M12 5v14" /></>)}</>,
 };
 
-export function Sidebar({ collapsed, onCollapse, onSoon }) {
+export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate }) {
   const soon = (label) => (e) => { e.preventDefault(); onSoon(label); };
   const item = (icon, label, active, onClick, badge) => (
     <button className={'nav-item' + (active ? ' active' : '')} onClick={onClick} aria-label={label}>
@@ -41,11 +41,11 @@ export function Sidebar({ collapsed, onCollapse, onSoon }) {
       <nav className="sidebar-nav">
         <div className="nav-section">
           <div className="nav-section-title">Overview</div>
-          {item(Icon.dashboard, 'Dashboard', false, soon('Dashboard'))}
+          {item(Icon.dashboard, 'Dashboard', module === 'dashboard', () => onNavigate('dashboard'))}
         </div>
         <div className="nav-section">
           <div className="nav-section-title">Finance</div>
-          {item(Icon.finance, 'Finance', true, null)}
+          {item(Icon.finance, 'Finance', module === 'finance', () => onNavigate('finance'))}
         </div>
         <div className="nav-section">
           <div className="nav-section-title">Insights</div>
@@ -101,12 +101,12 @@ export function Topbar({ title, theme, onTheme, onMenu, email, roleLabel, onSign
   );
 }
 
-export function MobileNav({ onSoon }) {
+export function MobileNav({ onSoon, module, onNavigate }) {
   const soon = (label) => (e) => { e.preventDefault(); onSoon(label); };
   return (
     <nav className="mobile-nav">
-      <button className="mobile-nav-item" onClick={soon('Dashboard')}>{Icon.dashboard}<span>Dashboard</span></button>
-      <button className="mobile-nav-item active">{Icon.finance}<span>Finance</span></button>
+      <button className={'mobile-nav-item' + (module === 'dashboard' ? ' active' : '')} onClick={() => onNavigate('dashboard')}>{Icon.dashboard}<span>Dashboard</span></button>
+      <button className={'mobile-nav-item' + (module === 'finance' ? ' active' : '')} onClick={() => onNavigate('finance')}>{Icon.finance}<span>Finance</span></button>
       <button className="mobile-nav-item" onClick={soon('Reports')}>{Icon.reports}<span>Reports</span></button>
       <button className="mobile-nav-item" onClick={soon('Documents')}>{Icon.docs}<span>Docs</span></button>
     </nav>

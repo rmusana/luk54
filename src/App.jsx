@@ -3,6 +3,7 @@ import { supabase } from './lib/supabaseClient.js';
 import { ConfirmProvider, Field, ToastProvider, useToast } from './components/ui.jsx';
 import { MobileNav, Sidebar, Topbar } from './components/shell.jsx';
 import Finance from './tabs/Finance.jsx';
+import Dashboard from './tabs/Dashboard.jsx';
 
 const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partner', investment_partner: 'Investment Partner' };
 
@@ -17,6 +18,13 @@ function Shell() {
   const [theme, setTheme] = useState(() => localStorage.getItem('luk54_theme') || 'dark');
   const [collapsed, setCollapsed] = useState(false);
   const [actions, setActions] = useState(null);
+  const [module, setModule] = useState('dashboard');
+
+  function navigate(to) {
+    setActions(null);
+    if (to === 'finance' || to === 'dashboard') setModule(to);
+    else toast('error', to + ' lands in the next update');
+  }
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -113,26 +121,43 @@ function Shell() {
 
   return (
     <>
-      <Sidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSoon={soon} />
+      <Sidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSoon={soon}
+        module={module} onNavigate={navigate} />
       <div className={'main-wrapper' + (collapsed ? ' wide' : '')}>
-        <Topbar title="Overview" theme={theme}
+        <Topbar title={module === 'dashboard' ? 'Overview' : 'Finance'} theme={theme}
           onTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           onMenu={() => setCollapsed(!collapsed)}
           email={session.user.email} roleLabel={ROLE_LABEL[profile.role] || profile.role}
           onSignOut={() => supabase.auth.signOut()} />
-        <div className="page-root">
-          <div className="page-header">
-            <div className="page-header-title">
-              <div className="breadcrumb"><span>Main</span><span>/</span><span>Finance</span></div>
-              <h1>Finance</h1>
-              <p className="u-text-secondary u-text-sm">Disbursements, revenue, expenses and profit distribution</p>
-            </div>
-            <div className="page-header-actions">{actions}</div>
-          </div>
-          <Finance role={profile.role} setActions={setActions} />
+        <div className="page-root" key={module}>
+          {module === 'dashboard' ? (
+            <>
+              <div className="page-header">
+                <div className="page-header-title">
+                  <div className="breadcrumb"><span>Main</span><span>/</span><span>Dashboard</span></div>
+                  <h1>Dashboard</h1>
+                  <p className="u-text-secondary u-text-sm">How healthy is this investment today?</p>
+                </div>
+                <div className="page-header-actions">{actions}</div>
+              </div>
+              <Dashboard role={profile.role} onNavigate={navigate} />
+            </>
+          ) : (
+            <>
+              <div className="page-header">
+                <div className="page-header-title">
+                  <div className="breadcrumb"><span>Main</span><span>/</span><span>Finance</span></div>
+                  <h1>Finance</h1>
+                  <p className="u-text-secondary u-text-sm">Disbursements, revenue, expenses and profit distribution</p>
+                </div>
+                <div className="page-header-actions">{actions}</div>
+              </div>
+              <Finance role={profile.role} setActions={setActions} />
+            </>
+          )}
         </div>
       </div>
-      <MobileNav onSoon={soon} />
+      <MobileNav onSoon={soon} module={module} onNavigate={navigate} />
     </>
   );
 }
