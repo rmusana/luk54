@@ -159,6 +159,9 @@ export function MobileNav({ onSoon, module, onNavigate, role }) {
       {(role === 'admin' || role === 'operating_partner') && (
       <button className={'mobile-nav-item' + (module === 'alerts' ? ' active' : '')} onClick={() => onNavigate('alerts')}>{Icon.bell}<span>Alerts</span></button>
       )}
+      {(role === 'admin' || role === 'investment_partner') && (
+      <button className={'mobile-nav-item' + (module === 'ai' ? ' active' : '')} onClick={() => onNavigate('ai')}>{Icon.spark}<span>AI</span></button>
+      )}
     </nav>
   );
 }
