@@ -8,6 +8,12 @@ import { Icon } from '../components/shell.jsx';
 
 Chart.register(...registerables);
 
+function applyChartTheme() {
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  Chart.defaults.color = css('--color-text-secondary') || '#a9b6b0';
+  Chart.defaults.borderColor = css('--color-border') || '#26332e';
+}
+
 function healthLabel(score) {
   if (score == null) return { text: '—', cls: 'neutral' };
   if (score >= 80) return { text: 'Strong', cls: 'positive' };
@@ -74,6 +80,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
   }
 
   function drawCharts(s) {
+    applyChartTheme();
     const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
     if (eggRef.current) {
       const trend = s.eggTrend || [];
