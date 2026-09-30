@@ -60,7 +60,6 @@ export default function AI({ setActions }) {
   ]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [snap, setSnap] = useState('');
   const bottom = useRef(null);
 
   useEffect(() => { return () => setActions(null); }, []);
@@ -68,12 +67,7 @@ export default function AI({ setActions }) {
     (async () => {
       try {
         const { data, error } = await supabase.from('ai_config').select('value').eq('key', 'gemini_key').single();
-        if (error || !data?.value) {
-          setReady(false);
-        } else {
-          setReady(true);
-          setSnap(await snapshot());
-        }
+        setReady(!error && !!data?.value);
       } catch (e) {
         setReady(false);
       }
@@ -93,6 +87,12 @@ export default function AI({ setActions }) {
       const { data: cfg } = await supabase.from('ai_config').select('value').eq('key', 'gemini_key').single();
       const key = cfg?.value;
       if (!key) throw new Error('AI is not configured yet.');
+      let snap;
+      try {
+        snap = await snapshot();
+      } catch (e) {
+        throw new Error('I could not read the farm records right now (' + (e.message || 'database error') + ').');
+      }
       const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + encodeURIComponent(key), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
