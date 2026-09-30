@@ -50,19 +50,22 @@ export default function Alerts({ role, setActions }) {
     else { toast('success', status === 'Resolved' ? 'Alert resolved' : 'Alert acknowledged'); load(); }
   }
 
+  const openCount = rows.filter((a) => String(a.status).toLowerCase() === 'open').length;
+  const critCount = rows.filter((a) => a.priority === 'Critical' && String(a.status).toLowerCase() !== 'resolved').length;
+
   return (
     <>
       <div className="card" style={{ padding: 14, marginBottom: 14, background: 'linear-gradient(135deg, var(--color-bg-elevated), var(--color-bg-subtle))', border: '1px solid var(--color-border)', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--color-critical-soft)', color: 'var(--color-critical)', display: 'grid', placeItems: 'center', fontWeight: 800 }}>!</div>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: critCount ? 'var(--color-critical-soft)' : 'var(--color-positive-soft)', color: critCount ? 'var(--color-critical)' : 'var(--color-positive)', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 16 }}>{critCount || '✓'}</div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>Inbox — role-filtered</div>
-            <div className="u-text-xs u-text-muted">Investor sees finance only · Ops sees operational · Admin all</div>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>Alerts Inbox</div>
+            <div className="u-text-xs u-text-muted">Evaluated by the rule engine · newest first</div>
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Badge tone="critical">Critical first</Badge>
-          <Badge tone="neutral">Open → Acknowledged → Resolved</Badge>
+          <Badge tone={openCount ? 'caution' : 'positive'}>{openCount} open</Badge>
+          <Badge tone={critCount ? 'critical' : 'neutral'}>{critCount} critical</Badge>
         </div>
       </div>
 
