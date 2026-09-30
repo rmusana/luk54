@@ -30,6 +30,7 @@ export const Icon = {
   refresh: <>{P(<><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></>)}</>,
   trendUp: <>{P(<><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" /></>)}</>,
   trendDown: <>{P(<><polyline points="22 17 13.5 8.5 8.5 13.5 2 7" /><polyline points="16 17 22 17 22 11" /></>)}</>,
+  spark: <>{P(<><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /></>)}</>,
 };
 
 export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate, role }) {
@@ -69,6 +70,7 @@ export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate, rol
           <div className="nav-section-title">Insights</div>
           {item(Icon.reports, 'Reports', module === 'reports', () => onNavigate('reports'))}
           {(role === 'admin' || role === 'operating_partner') && item(Icon.bell, 'Alerts', module === 'alerts', () => onNavigate('alerts'))}
+          {(role === 'admin' || role === 'investment_partner') && item(Icon.spark || Icon.info, 'Assistant', module === 'ai', () => onNavigate('ai'))}
           {item(Icon.docs, 'Documents', module === 'documents', () => onNavigate('documents'))}
           {role === 'admin' && (
           <div className="nav-section">

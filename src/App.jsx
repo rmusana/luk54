@@ -11,6 +11,7 @@ import Reports from './tabs/Reports.jsx';
 import Alerts from './tabs/Alerts.jsx';
 import Documents from './tabs/Documents.jsx';
 import Settings from './tabs/Settings.jsx';
+import AI from './tabs/AI.jsx';
 
 const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partner', investment_partner: 'Investment Partner' };
 
@@ -70,7 +71,11 @@ function Shell() {
       toast('error', 'Alerts are not available to Investment Partners');
       return;
     }
-    if (to === 'finance' || to === 'dashboard' || to === 'operations' || to === 'reports' || to === 'alerts' || to === 'documents') setModule(to);
+    if (to === 'ai' && profile?.role !== 'admin' && profile?.role !== 'investment_partner') {
+      toast('error', 'The farm assistant is not available for your role');
+      return;
+    }
+    if (to === 'finance' || to === 'dashboard' || to === 'operations' || to === 'reports' || to === 'alerts' || to === 'documents' || to === 'ai') setModule(to);
     else if (to === 'settings' && profile?.role === 'admin') setModule(to);
     else if (to === 'settings') toast('error', 'Settings is for Administrators');
   }
@@ -82,6 +87,7 @@ function Shell() {
 
   useEffect(() => {
     if (profile?.role === 'investment_partner' && (module === 'operations' || module === 'alerts' || module === 'settings')) setModule('dashboard');
+    if (profile?.role === 'operating_partner' && module === 'ai') setModule('dashboard');
   }, [profile, module]);
 
   useEffect(() => {
@@ -217,7 +223,7 @@ function Shell() {
       <Sidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSoon={soon}
         module={module} onNavigate={navigate} role={profile.role} />
       <div className={'main-wrapper' + (collapsed ? ' wide' : '')}>
-        <Topbar title={module === 'dashboard' ? 'Overview' : module === 'operations' ? 'Operations' : module === 'reports' ? 'Reports' : module === 'alerts' ? 'Alerts' : module === 'documents' ? 'Documents' : 'Finance'}
+        <Topbar title={module === 'dashboard' ? 'Overview' : module === 'operations' ? 'Operations' : module === 'reports' ? 'Reports' : module === 'alerts' ? 'Alerts' : module === 'documents' ? 'Documents' : module === 'ai' ? 'Assistant' : 'Finance'}
           onMenu={() => setCollapsed(!collapsed)}
           email={session.user.email} roleLabel={ROLE_LABEL[profile.role] || profile.role}
           onSignOut={() => supabase.auth.signOut()}
@@ -309,6 +315,19 @@ function Shell() {
                 <div className="page-header-actions">{actions}</div>
               </div>
               <Settings setActions={setActions} />
+            </>
+          )}
+          {(module === 'ai' && (profile?.role === 'admin' || profile?.role === 'investment_partner')) && (
+            <>
+              <div className="page-header">
+                <div className="page-header-title">
+                  <div className="breadcrumb"><span>Main</span><span>/</span><span>Assistant</span></div>
+                  <h1>Farm Assistant</h1>
+                  <p className="u-text-secondary u-text-sm">Answers only from your live farm records</p>
+                </div>
+                <div className="page-header-actions">{actions}</div>
+              </div>
+              <AI setActions={setActions} />
             </>
           )}
           {module === 'finance' && (

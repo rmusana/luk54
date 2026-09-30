@@ -348,6 +348,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
         <div className="card-body" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {(role === 'admin' || role === 'operating_partner') && <button className="btn btn-primary btn-sm" onClick={() => onNavigate('operations')}>Log Daily Production</button>}
           {(role === 'admin' || role === 'investment_partner') && <button className="btn btn-primary btn-sm" onClick={() => onNavigate('finance')}>Add Capital</button>}
+          {(role === 'admin' || role === 'investment_partner') && <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('ai')}>Ask AI</button>}
           <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('finance')}>Review Funding</button>
         </div>
       </div>
