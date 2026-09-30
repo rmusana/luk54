@@ -153,12 +153,12 @@ export function SummarySec({ data, role, onAddCapital }) {
 }
 
 /* ── Disbursements (capital) ── */
-export function CapitalSec({ role, setActions, autoOpen }) {
+export function CapitalSec({ role, setActions, autoOpen, onConsumed }) {
   const toast = useToast();
   const confirm = useConfirm();
   const { rows, loading, reload } = useFinTable('capital_contributions');
   const [show, setShow] = useState(false);
-  useEffect(() => { if (autoOpen) setShow(true); }, [autoOpen]);
+  useEffect(() => { if (autoOpen) { setShow(true); if (onConsumed) onConsumed(); } }, [autoOpen]);
   const writable = canWrite(role, 'capital');
   useEffect(() => {
     setActions(writable ? <button className="btn btn-primary btn-sm" onClick={() => setShow(true)}>+ Record disbursement</button>

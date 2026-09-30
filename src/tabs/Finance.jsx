@@ -63,7 +63,7 @@ export default function Finance({ role, setActions }) {
       {loading ? <div className="skeleton" style={{ height: 160 }} /> : (
         <div key={activeSub}>
           {activeSub === 'overview' && <SummarySec data={data} role={role} onAddCapital={() => { setCapSignal((x) => x + 1); setActions(null); setSub('capital'); }} />}
-          {activeSub === 'capital' && <CapitalSec role={role} setActions={setActions} autoOpen={capSignal} />}
+          {activeSub === 'capital' && <CapitalSec role={role} setActions={setActions} autoOpen={capSignal} onConsumed={() => setCapSignal(0)} />}
           {activeSub === 'revenue' && <RevenueSec data={data} />}
           {activeSub === 'expenses' && <ExpensesSec role={role} setActions={setActions} data={data} />}
           {activeSub === 'allocation' && <AllocationSec role={role} data={data} setActions={setActions} />}

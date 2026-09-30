@@ -3,9 +3,19 @@ import { formatDate, formatNumber, formatUGX } from '../lib/format.js';
 import { REPORTS, generateReport, shiftWeek, weekRange } from '../lib/reports.js';
 import { DataTable, useToast } from '../components/ui.jsx';
 
-function fmtVal(v) {
-  if (typeof v === 'number') return formatUGX(v);
-  return v;
+const COUNT = new Set(['Eggs collected', 'Sales count', 'Days logged', 'Total eggs', 'Total mortality',
+  'Purchase lines', 'Total deaths', 'Days with losses', 'Scheduled', 'Completed', 'Overdue',
+  'Treatments (period)', 'Treatments', 'Feed products', 'Store items', 'Contributions', 'Expenses',
+  'Sales', 'Production days']);
+const KG = new Set(['Feed used (kg)', 'Mix total (kg)']);
+const TRAYS = new Set(['Trays sold']);
+
+function fmtVal(label, v) {
+  if (typeof v !== 'number') return v;
+  if (KG.has(label)) return formatNumber(v, 1) + ' kg';
+  if (TRAYS.has(label)) return formatNumber(v, 1);
+  if (COUNT.has(label)) return formatNumber(v, 0);
+  return formatUGX(v);
 }
 
 export default function Reports({ setActions }) {
@@ -119,7 +129,7 @@ export default function Reports({ setActions }) {
             {report.kpis.map(([l, v], i) => (
               <div className="card kpi-card" key={i}>
                 <div className="kpi-label">{l}</div>
-                <div className="kpi-value" style={{ fontSize: '1.2rem' }}>{fmtVal(v)}</div>
+                <div className="kpi-value" style={{ fontSize: '1.2rem' }}>{fmtVal(l, v)}</div>
               </div>
             ))}
           </div>
