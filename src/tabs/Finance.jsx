@@ -6,18 +6,20 @@ import { CapitalSec, ExpensesSec, SummarySec } from './finance/Core.jsx';
 import { AllocationSec, CashflowSec, ProfitSec, RevenueSec } from './finance/Sections.jsx';
 
 const SUBS = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'capital', label: 'Disbursements' },
-  { id: 'revenue', label: 'Revenue' },
-  { id: 'expenses', label: 'Expenses' },
-  { id: 'allocation', label: 'Revenue Allocation' },
-  { id: 'profit', label: 'Profit Distribution' },
-  { id: 'cashflow', label: 'Cash Flow' },
+  { id: 'overview', label: 'Overview', roles: ['admin', 'operating_partner', 'investment_partner'] },
+  { id: 'capital', label: 'Disbursements', roles: ['admin', 'investment_partner'] },
+  { id: 'revenue', label: 'Revenue', roles: ['admin', 'operating_partner', 'investment_partner'] },
+  { id: 'expenses', label: 'Expenses', roles: ['admin', 'operating_partner', 'investment_partner'] },
+  { id: 'allocation', label: 'Revenue Allocation', roles: ['admin', 'investment_partner'] },
+  { id: 'profit', label: 'Profit Distribution', roles: ['admin', 'investment_partner'] },
+  { id: 'cashflow', label: 'Cash Flow', roles: ['admin', 'operating_partner', 'investment_partner'] },
 ];
 
 export default function Finance({ role, setActions }) {
   const toast = useToast();
+  const allowed = SUBS.filter((s) => s.roles.includes(role));
   const [sub, setSub] = useState('overview');
+  const activeSub = allowed.some((s) => s.id === sub) ? sub : allowed[0].id;
   const [capSignal, setCapSignal] = useState(0);
   const [data, setData] = useState({ capital: [], expenses: [], sales: [], budget: [], allocations: [], distributions: [], daily: [], commercial: false, summary: null });
   const [loading, setLoading] = useState(true);
@@ -53,20 +55,20 @@ export default function Finance({ role, setActions }) {
   return (
     <>
       <div className="pill-tabs">
-        {SUBS.map((s) => (
-          <button key={s.id} className={'btn btn-sm ' + (s.id === sub ? 'btn-primary' : 'btn-ghost')}
+        {allowed.map((s) => (
+          <button key={s.id} className={'btn btn-sm ' + (s.id === activeSub ? 'btn-primary' : 'btn-ghost')}
             onClick={() => { setActions(null); setSub(s.id); }}>{s.label}</button>
         ))}
       </div>
       {loading ? <div className="skeleton" style={{ height: 160 }} /> : (
-        <div key={sub}>
-          {sub === 'overview' && <SummarySec data={data} role={role} onAddCapital={() => { setCapSignal((x) => x + 1); setActions(null); setSub('capital'); }} />}
-          {sub === 'capital' && <CapitalSec role={role} setActions={setActions} autoOpen={capSignal} />}
-          {sub === 'revenue' && <RevenueSec data={data} />}
-          {sub === 'expenses' && <ExpensesSec role={role} setActions={setActions} data={data} />}
-          {sub === 'allocation' && <AllocationSec role={role} data={data} setActions={setActions} />}
-          {sub === 'profit' && <ProfitSec role={role} data={data} setActions={setActions} onChanged={load} />}
-          {sub === 'cashflow' && <CashflowSec data={data} />}
+        <div key={activeSub}>
+          {activeSub === 'overview' && <SummarySec data={data} role={role} onAddCapital={() => { setCapSignal((x) => x + 1); setActions(null); setSub('capital'); }} />}
+          {activeSub === 'capital' && <CapitalSec role={role} setActions={setActions} autoOpen={capSignal} />}
+          {activeSub === 'revenue' && <RevenueSec data={data} />}
+          {activeSub === 'expenses' && <ExpensesSec role={role} setActions={setActions} data={data} />}
+          {activeSub === 'allocation' && <AllocationSec role={role} data={data} setActions={setActions} />}
+          {activeSub === 'profit' && <ProfitSec role={role} data={data} setActions={setActions} onChanged={load} />}
+          {activeSub === 'cashflow' && <CashflowSec data={data} />}
         </div>
       )}
     </>

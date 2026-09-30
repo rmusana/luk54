@@ -32,7 +32,8 @@ export const Icon = {
   trendDown: <>{P(<><polyline points="22 17 13.5 8.5 8.5 13.5 2 7" /><polyline points="16 17 22 17 22 11" /></>)}</>,
 };
 
-export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate }) {
+export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate, role }) {
+  const canOps = role === 'admin' || role === 'operating_partner';
   const soon = (label) => (e) => { e.preventDefault(); onSoon(label); };
   const item = (icon, label, active, onClick, badge) => (
     <button className={'nav-item' + (active ? ' active' : '')} onClick={onClick} aria-label={label}>
@@ -54,10 +55,12 @@ export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate }) {
           <div className="nav-section-title">Overview</div>
           {item(Icon.dashboard, 'Dashboard', module === 'dashboard', () => onNavigate('dashboard'))}
         </div>
+        {canOps && (
         <div className="nav-section">
           <div className="nav-section-title">Operations</div>
           {item(Icon.ops, 'Operations', module === 'operations', () => onNavigate('operations'))}
         </div>
+        )}
         <div className="nav-section">
           <div className="nav-section-title">Finance</div>
           {item(Icon.finance, 'Finance', module === 'finance', () => onNavigate('finance'))}
@@ -113,12 +116,14 @@ export function Topbar({ title, onMenu, email, roleLabel, onSignOut }) {
   );
 }
 
-export function MobileNav({ onSoon, module, onNavigate }) {
+export function MobileNav({ onSoon, module, onNavigate, role }) {
   const soon = (label) => (e) => { e.preventDefault(); onSoon(label); };
   return (
     <nav className="mobile-nav">
       <button className={'mobile-nav-item' + (module === 'dashboard' ? ' active' : '')} onClick={() => onNavigate('dashboard')}>{Icon.dashboard}<span>Dashboard</span></button>
+      {(role === 'admin' || role === 'operating_partner') && (
       <button className={'mobile-nav-item' + (module === 'operations' ? ' active' : '')} onClick={() => onNavigate('operations')}>{Icon.ops}<span>Ops</span></button>
+      )}
       <button className={'mobile-nav-item' + (module === 'finance' ? ' active' : '')} onClick={() => onNavigate('finance')}>{Icon.finance}<span>Finance</span></button>
       <button className="mobile-nav-item" onClick={soon('Reports')}>{Icon.reports}<span>Reports</span></button>
       <button className="mobile-nav-item" onClick={soon('Documents')}>{Icon.docs}<span>Docs</span></button>

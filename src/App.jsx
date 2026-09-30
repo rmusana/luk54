@@ -22,6 +22,10 @@ function Shell() {
 
   function navigate(to) {
     setActions(null);
+    if (to === 'operations' && profile?.role === 'investment_partner') {
+      toast('error', 'Operations is not available to Investment Partners');
+      return;
+    }
     if (to === 'finance' || to === 'dashboard' || to === 'operations') setModule(to);
     else toast('error', to + ' lands in the next update');
   }
@@ -30,6 +34,10 @@ function Shell() {
     document.documentElement.setAttribute('data-theme', 'dark');
     try { localStorage.setItem('luk54_theme', 'dark'); } catch (e) {}
   }, []);
+
+  useEffect(() => {
+    if (profile?.role === 'investment_partner' && module === 'operations') setModule('dashboard');
+  }, [profile, module]);
 
   async function loadProfile(uid) {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
@@ -122,7 +130,7 @@ function Shell() {
   return (
     <>
       <Sidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSoon={soon}
-        module={module} onNavigate={navigate} />
+        module={module} onNavigate={navigate} role={profile.role} />
       <div className={'main-wrapper' + (collapsed ? ' wide' : '')}>
         <Topbar title={module === 'dashboard' ? 'Overview' : module === 'operations' ? 'Operations' : 'Finance'}
           onMenu={() => setCollapsed(!collapsed)}
@@ -170,7 +178,7 @@ function Shell() {
           )}
         </div>
       </div>
-      <MobileNav onSoon={soon} module={module} onNavigate={navigate} />
+      <MobileNav onSoon={soon} module={module} onNavigate={navigate} role={profile.role} />
     </>
   );
 }
