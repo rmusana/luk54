@@ -69,7 +69,7 @@ export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate, rol
           <div className="nav-section-title">Insights</div>
           {item(Icon.reports, 'Reports', module === 'reports', () => onNavigate('reports'))}
           {(role === 'admin' || role === 'operating_partner') && item(Icon.bell, 'Alerts', module === 'alerts', () => onNavigate('alerts'))}
-          {item(Icon.docs, 'Documents', false, soon('Documents'))}
+          {item(Icon.docs, 'Documents', module === 'documents', () => onNavigate('documents'))}
         </div>
         <div className="nav-section">
           <div className="nav-section-title">System</div>

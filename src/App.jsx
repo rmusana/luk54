@@ -7,6 +7,7 @@ import Dashboard from './tabs/Dashboard.jsx';
 import Operations from './tabs/Operations.jsx';
 import Reports from './tabs/Reports.jsx';
 import Alerts from './tabs/Alerts.jsx';
+import Documents from './tabs/Documents.jsx';
 
 const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partner', investment_partner: 'Investment Partner' };
 
@@ -50,7 +51,7 @@ function Shell() {
       toast('error', 'Alerts are not available to Investment Partners');
       return;
     }
-    if (to === 'finance' || to === 'dashboard' || to === 'operations' || to === 'reports' || to === 'alerts') setModule(to);
+    if (to === 'finance' || to === 'dashboard' || to === 'operations' || to === 'reports' || to === 'alerts' || to === 'documents') setModule(to);
     else toast('error', to + ' lands in the next update');
   }
 
@@ -173,7 +174,7 @@ function Shell() {
       <Sidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSoon={soon}
         module={module} onNavigate={navigate} role={profile.role} />
       <div className={'main-wrapper' + (collapsed ? ' wide' : '')}>
-        <Topbar title={module === 'dashboard' ? 'Overview' : module === 'operations' ? 'Operations' : module === 'reports' ? 'Reports' : module === 'alerts' ? 'Alerts' : 'Finance'}
+        <Topbar title={module === 'dashboard' ? 'Overview' : module === 'operations' ? 'Operations' : module === 'reports' ? 'Reports' : module === 'alerts' ? 'Alerts' : module === 'documents' ? 'Documents' : 'Finance'}
           onMenu={() => setCollapsed(!collapsed)}
           email={session.user.email} roleLabel={ROLE_LABEL[profile.role] || profile.role}
           onSignOut={() => supabase.auth.signOut()}
@@ -229,6 +230,19 @@ function Shell() {
                 <div className="page-header-actions">{actions}</div>
               </div>
               <Alerts role={profile.role} setActions={setActions} />
+            </>
+          )}
+          {module === 'documents' && (
+            <>
+              <div className="page-header">
+                <div className="page-header-title">
+                  <div className="breadcrumb"><span>Main</span><span>/</span><span>Documents</span></div>
+                  <h1>Documents</h1>
+                  <p className="u-text-secondary u-text-sm">Receipts, invoices, photos and statements</p>
+                </div>
+                <div className="page-header-actions">{actions}</div>
+              </div>
+              <Documents role={profile.role} email={session.user.email} setActions={setActions} />
             </>
           )}
           {module === 'finance' && (
