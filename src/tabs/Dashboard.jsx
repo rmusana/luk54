@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { supabase } from '../lib/supabaseClient.js';
 import { formatDate, formatNumber, formatPercent, formatUGX } from '../lib/format.js';
-import { buildInsights, computeSummary, deriveAlerts, recentActivity } from '../lib/dashboard.js';
+import { buildInsights, computeSummary, recentActivity } from '../lib/dashboard.js';
+import { runEngine, visibleToRole } from '../lib/alerts.js';
 import { Badge, useToast } from '../components/ui.jsx';
 import { Icon } from '../components/shell.jsx';
 
@@ -46,27 +47,36 @@ export default function Dashboard({ role, onNavigate, setActions }) {
   async function load() {
     charts.current.forEach((c) => { try { c.destroy(); } catch (e) {} });
     charts.current = [];
-    const [cap, exp, sales, bud, daily, alloc] = await Promise.all([
+    // silent engine refresh at most every 6h (writers only)
+    if (role === 'admin' || role === 'operating_partner') {
+      try {
+        const lastRun = Number(localStorage.getItem('luk54_engine_ts') || 0);
+        if (Date.now() - lastRun > 6 * 3600 * 1000) {
+          await runEngine();
+          localStorage.setItem('luk54_engine_ts', String(Date.now()));
+        }
+      } catch (e) { /* engine is best-effort on dashboard */ }
+    }
+    const [cap, exp, sales, bud, daily, inbox] = await Promise.all([
       supabase.from('capital_contributions').select('*').limit(500),
       supabase.from('expenses').select('*').limit(500),
       supabase.from('sales').select('*').limit(500),
       supabase.from('budget_lines').select('*').limit(200),
       supabase.from('daily_production').select('*').order('date').limit(500),
-      supabase.from('revenue_allocations').select('*').limit(100),
+      supabase.from('alerts').select('*').eq('project_id', 'LUK54').order('created_at', { ascending: false }).limit(100),
     ]);
-    const err = [cap, exp, sales, bud, daily, alloc].map((r) => r.error).filter(Boolean)[0];
+    const err = [cap, exp, sales, bud, daily, inbox].map((r) => r.error).filter(Boolean)[0];
     if (err) { toast('error', err.message); return; }
     const base = {
       capital: cap.data || [], expenses: exp.data || [], sales: sales.data || [],
       daily: daily.data || [], budgetLines: bud.data || [],
     };
-    const pass1 = computeSummary({ ...base, criticalAlerts: 0 });
-    const al = deriveAlerts({ daily: base.daily, allocations: alloc.data || [], summary: pass1 });
-    const crit = al.filter((a) => a.priority === 'Critical').length;
+    const open = visibleToRole(inbox.data || [], role).filter((a) => ['open', 'acknowledged'].includes(String(a.status).toLowerCase()));
+    const crit = open.filter((a) => a.priority === 'Critical').length;
     const s = computeSummary({ ...base, criticalAlerts: crit });
-    s.openAlerts = al.length; s.criticalAlerts = crit;
+    s.openAlerts = open.length; s.criticalAlerts = crit;
     setSummary(s);
-    setAlerts(al);
+    setAlerts(open.slice(0, 5));
     setInsights(buildInsights(s));
     setActivity(recentActivity(base));
     const D = base.daily, S = base.sales;

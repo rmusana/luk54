@@ -6,6 +6,7 @@ import Finance from './tabs/Finance.jsx';
 import Dashboard from './tabs/Dashboard.jsx';
 import Operations from './tabs/Operations.jsx';
 import Reports from './tabs/Reports.jsx';
+import Alerts from './tabs/Alerts.jsx';
 
 const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partner', investment_partner: 'Investment Partner' };
 
@@ -28,7 +29,11 @@ function Shell() {
       toast('error', 'Operations is not available to Investment Partners');
       return;
     }
-    if (to === 'finance' || to === 'dashboard' || to === 'operations' || to === 'reports') setModule(to);
+    if (to === 'alerts' && profile?.role === 'investment_partner') {
+      toast('error', 'Alerts are not available to Investment Partners');
+      return;
+    }
+    if (to === 'finance' || to === 'dashboard' || to === 'operations' || to === 'reports' || to === 'alerts') setModule(to);
     else toast('error', to + ' lands in the next update');
   }
 
@@ -38,7 +43,7 @@ function Shell() {
   }, []);
 
   useEffect(() => {
-    if (profile?.role === 'investment_partner' && module === 'operations') setModule('dashboard');
+    if (profile?.role === 'investment_partner' && (module === 'operations' || module === 'alerts')) setModule('dashboard');
   }, [profile, module]);
 
   useEffect(() => {
@@ -151,7 +156,7 @@ function Shell() {
       <Sidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSoon={soon}
         module={module} onNavigate={navigate} role={profile.role} />
       <div className={'main-wrapper' + (collapsed ? ' wide' : '')}>
-        <Topbar title={module === 'dashboard' ? 'Overview' : module === 'operations' ? 'Operations' : module === 'reports' ? 'Reports' : 'Finance'}
+        <Topbar title={module === 'dashboard' ? 'Overview' : module === 'operations' ? 'Operations' : module === 'reports' ? 'Reports' : module === 'alerts' ? 'Alerts' : 'Finance'}
           onMenu={() => setCollapsed(!collapsed)}
           email={session.user.email} roleLabel={ROLE_LABEL[profile.role] || profile.role}
           onSignOut={() => supabase.auth.signOut()} />
@@ -193,6 +198,19 @@ function Shell() {
                 <div className="page-header-actions">{actions}</div>
               </div>
               <Reports setActions={setActions} />
+            </>
+          )}
+          {module === 'alerts' && (
+            <>
+              <div className="page-header">
+                <div className="page-header-title">
+                  <div className="breadcrumb"><span>Main</span><span>/</span><span>Alerts</span></div>
+                  <h1>Alerts</h1>
+                  <p className="u-text-secondary u-text-sm">Proactive notifications and recommended actions</p>
+                </div>
+                <div className="page-header-actions">{actions}</div>
+              </div>
+              <Alerts role={profile.role} setActions={setActions} />
             </>
           )}
           {module === 'finance' && (

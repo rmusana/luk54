@@ -68,6 +68,7 @@ export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate, rol
         <div className="nav-section">
           <div className="nav-section-title">Insights</div>
           {item(Icon.reports, 'Reports', module === 'reports', () => onNavigate('reports'))}
+          {(role === 'admin' || role === 'operating_partner') && item(Icon.bell, 'Alerts', module === 'alerts', () => onNavigate('alerts'))}
           {item(Icon.docs, 'Documents', false, soon('Documents'))}
         </div>
         <div className="nav-section">
@@ -126,7 +127,9 @@ export function MobileNav({ onSoon, module, onNavigate, role }) {
       )}
       <button className={'mobile-nav-item' + (module === 'finance' ? ' active' : '')} onClick={() => onNavigate('finance')}>{Icon.finance}<span>Finance</span></button>
       <button className={'mobile-nav-item' + (module === 'reports' ? ' active' : '')} onClick={() => onNavigate('reports')}>{Icon.reports}<span>Reports</span></button>
-      <button className="mobile-nav-item" onClick={soon('Documents')}>{Icon.docs}<span>Docs</span></button>
+      {(role === 'admin' || role === 'operating_partner') && (
+      <button className={'mobile-nav-item' + (module === 'alerts' ? ' active' : '')} onClick={() => onNavigate('alerts')}>{Icon.bell}<span>Alerts</span></button>
+      )}
     </nav>
   );
 }
