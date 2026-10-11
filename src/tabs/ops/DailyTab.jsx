@@ -102,6 +102,9 @@ export default function DailyTab({ setActions, writable = true }) {
               const b = Number(r.opening_birds || 0), e = Number(r.eggs_collected || 0);
               return e > 0 && b > 0 ? formatNumber((e / b) * 100, 1) + '%' : '—';
             } },
+            { key: 'notes', label: 'Notes', accessor: (r) => r.notes
+              ? <span title={r.notes}>{r.notes.length > 32 ? r.notes.slice(0, 32) + '…' : r.notes}</span>
+              : '—' },
           ]}
           rows={rows}
           actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
