@@ -1,7 +1,8 @@
-/* Gap engine — the system runs on facts, never guesses.
- * Coverage starts at the first-ever log (nothing before that is "missed").
- * A date counts as logged if ANY section has a row for it.
- * Only yesterday-and-before can be "missed" — today is still loggable. */
+/* Coverage helper — informational only.
+ * The Daily Log accepts ANY date in ANY order; tables sort themselves.
+ * getMissingDays simply reports dates with no log between the first log and
+ * yesterday, so coverage banners and alerts can show the truth. Nothing here
+ * blocks saving. */
 
 export const key10 = (v) => String(v || '').slice(0, 10);
 
@@ -36,27 +37,12 @@ export function latestDate(rows) {
 }
 
 /**
- * Can the partner save a log for `candidate`?
- * - No logs yet → anything goes (first log sets the start).
- * - Must fill the earliest missing day first — no jumping over gaps.
- * - Otherwise the date must be newer than everything logged (no silent gaps).
- * - Re-saving an already-logged date (multi-section / correction) is allowed.
+ * Kept for compatibility — always allows the date.
+ * Entry is free-order: any date, any sequence. Kept so older callers
+ * never block a save.
  */
 export function canLogDate(rows, candidate) {
   const day = key10(candidate);
   if (!day) return { ok: false, reason: 'Pick a date first.' };
-  const logged = new Set((rows || []).map((r) => key10(r.date)));
-  if (!logged.size) return { ok: true };
-  const missing = getMissingDays(rows);
-  if (logged.has(day)) return { ok: true }; // correction / second section
-  if (missing.length && day !== missing[0]) {
-    return {
-      ok: false,
-      reason: 'Log ' + missing[0] + ' first — ' + missing.length + ' day(s) missing (' + missing.join(', ') + '). Days must be logged in order.',
-      missing,
-    };
-  }
-  const max = latestDate(rows);
-  if (!missing.length && max && day <= max) return { ok: true }; // duplicate edge, harmless
   return { ok: true };
 }

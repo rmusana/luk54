@@ -227,7 +227,7 @@ function ActivitySec() {
   );
 }
 
-const EXPORT_TABLES = ['capital_contributions', 'expenses', 'sales', 'daily_production', 'budget_lines', 'revenue_allocations', 'profit_distributions', 'flock_events', 'flock_sections', 'feed_purchases', 'feed_inventory', 'weekly_feed_mix', 'health_events', 'vaccination_schedule', 'inventory', 'staff_notes', 'workers', 'alerts', 'documents', 'profiles', 'app_settings'];
+const EXPORT_TABLES = ['capital_contributions', 'expenses', 'sales', 'daily_production', 'budget_lines', 'revenue_allocations', 'profit_distributions', 'equity_items', 'flock_events', 'flock_sections', 'feed_purchases', 'feed_inventory', 'weekly_feed_mix', 'health_events', 'vaccination_schedule', 'inventory', 'staff_notes', 'workers', 'alerts', 'documents', 'profiles', 'app_settings'];
 
 function BackupSec() {
   const toast = useToast();

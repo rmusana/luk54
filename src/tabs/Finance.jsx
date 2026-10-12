@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient.js';
 import { financialSummary, isCommercial } from '../lib/finance.js';
 import { useToast } from '../components/ui.jsx';
 import { CapitalSec, ExpensesSec, SummarySec } from './finance/Core.jsx';
-import { AllocationSec, CashflowSec, ProfitSec, RevenueSec } from './finance/Sections.jsx';
+import { AllocationSec, CashflowSec, EquitySec, ProfitSec, RevenueSec } from './finance/Sections.jsx';
 
 const SUBS = [
   { id: 'overview', label: 'Overview', roles: ['admin', 'operating_partner', 'investment_partner'] },
@@ -12,6 +12,7 @@ const SUBS = [
   { id: 'expenses', label: 'Expenses', roles: ['admin', 'operating_partner', 'investment_partner'] },
   { id: 'allocation', label: 'Revenue Allocation', roles: ['admin', 'investment_partner'] },
   { id: 'profit', label: 'Profit Distribution', roles: ['admin', 'investment_partner'] },
+  { id: 'equity', label: 'Equity', roles: ['admin', 'investment_partner'] },
   { id: 'cashflow', label: 'Cash Flow', roles: ['admin', 'operating_partner', 'investment_partner'] },
 ];
 
@@ -68,6 +69,7 @@ export default function Finance({ role, setActions }) {
           {activeSub === 'expenses' && <ExpensesSec role={role} setActions={setActions} data={data} />}
           {activeSub === 'allocation' && <AllocationSec role={role} data={data} setActions={setActions} />}
           {activeSub === 'profit' && <ProfitSec role={role} data={data} setActions={setActions} onChanged={load} />}
+          {activeSub === 'equity' && <EquitySec role={role} setActions={setActions} />}
           {activeSub === 'cashflow' && <CashflowSec data={data} />}
         </div>
       )}

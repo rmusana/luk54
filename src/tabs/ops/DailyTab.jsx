@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
 import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, todayEAT } from '../../lib/format.js';
-import { canLogDate, getMissingDays } from '../../lib/gaps.js';
+import { getMissingDays } from '../../lib/gaps.js';
 import { smartInsert } from '../../lib/queue.js';
 import { DataTable, Field, Gauge, Modal, Sparkline, useConfirm, useToast } from '../../components/ui.jsx';
 
@@ -19,8 +19,8 @@ export default function DailyTab({ setActions, writable = true }) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [presetDate, setPresetDate] = useState(null);
+  const [sortDir, setSortDir] = useState('desc');
   const missing = getMissingDays(rows);
-  const missingKey = missing.join(',');
 
   function openForm(date) {
     setPresetDate(date || null);
@@ -29,7 +29,7 @@ export default function DailyTab({ setActions, writable = true }) {
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase.from('daily_production').select('*').order('date', { ascending: false }).limit(60);
+    const { data, error } = await supabase.from('daily_production').select('*').order('date', { ascending: false }).limit(2000);
     if (error) toast('error', error.message);
     else setRows(data || []);
     setLoading(false);
@@ -38,9 +38,9 @@ export default function DailyTab({ setActions, writable = true }) {
 
   useEffect(() => {
     if (!writable) { setActions(null); return () => setActions(null); }
-    setActions(<button className="btn btn-primary btn-sm" onClick={() => openForm(missing[0])}>+ Log Day</button>);
+    setActions(<button className="btn btn-primary btn-sm" onClick={() => openForm()}>+ Log Day</button>);
     return () => setActions(null);
-  }, [missingKey]);
+  }, []);
 
   async function onDelete(row) {
     const ok = await confirm({ title: 'Delete daily log', message: 'Delete the log for ' + (row.date || 'this day') + '? This cannot be undone.', confirmLabel: 'Delete', danger: true });
@@ -50,11 +50,12 @@ export default function DailyTab({ setActions, writable = true }) {
     else { audit('DELETE', 'daily_production', row.id, 'Deleted log ' + (row.date || '')); toast('success', 'Daily log deleted'); load(); }
   }
 
-  const latest = rows[0] || {};
+  const byDateDesc = [...rows].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const latest = byDateDesc[0] || {};
   const birds = Number(latest.closing_birds ?? latest.opening_birds ?? 0);
   const eggs = Number(latest.eggs_collected ?? (latest.eggs_trays ? latest.eggs_trays * 30 : 0));
   const pct = birds > 0 && eggs > 0 ? Math.round((eggs / birds) * 1000) / 10 : null;
-  const recent = rows.slice(0, 14).reverse();
+  const recent = [...rows].sort((a, b) => new Date(a.date) - new Date(b.date)).slice(-14);
   const sparkVals = recent.map((r) => {
     const b = Number(r.closing_birds || r.opening_birds || 1);
     const e = Number(r.eggs_collected || 0);
@@ -66,15 +67,16 @@ export default function DailyTab({ setActions, writable = true }) {
 
   return (
     <>
-      {missing.length > 0 && (
-        <div className="card pad-4 mb-4" style={{ borderColor: 'var(--color-critical)', background: 'var(--color-critical-soft)' }}>
+      {missing.length > 0 && rows.length > 0 && (
+        <div className="card pad-4 mb-4">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
-            ⚠ {missing.length} day{missing.length > 1 ? 's' : ''} missing: {missing.map(formatDate).join(' · ')}
+            📋 Coverage: {missing.length} day{missing.length > 1 ? 's' : ''} without logs
+            ({missing.length <= 12 ? missing.map(formatDate).join(' · ') : formatDate(missing[0]) + ' → ' + formatDate(missing[missing.length - 1])})
           </div>
           <div className="u-text-xs u-text-secondary" style={{ marginBottom: 8 }}>
-            Days must be logged in order — {writable ? 'fill ' + formatDate(missing[0]) + ' first before any newer day.' : 'ask the Operating Partner to backfill.'}
+            Log any date in any order — the table sorts itself automatically.
           </div>
-          {writable && <button className="btn btn-primary btn-sm" onClick={() => openForm(missing[0])}>Log {formatDate(missing[0])} now</button>}
+          {writable && <button className="btn btn-secondary btn-sm" onClick={() => openForm(missing[0])}>Log {formatDate(missing[0])}</button>}
         </div>
       )}
       <div className="hero">
@@ -88,7 +90,12 @@ export default function DailyTab({ setActions, writable = true }) {
         </div>
         <Sparkline values={sparkVals} stroke={spark} />
       </div>
-      {loading ? <div className="skeleton" style={{ height: 140 }} /> : (
+      {loading ? <div className="skeleton" style={{ height: 140 }} /> : (<>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => setSortDir(sortDir === 'desc' ? 'asc' : 'desc')}>
+            {sortDir === 'desc' ? 'Newest first ↓' : 'Oldest first ↑'}
+          </button>
+        </div>
         <DataTable
           columns={[
             { key: 'date', label: 'Date', accessor: (r) => formatDate(r.date) },
@@ -106,12 +113,12 @@ export default function DailyTab({ setActions, writable = true }) {
               ? <span title={r.notes}>{r.notes.length > 32 ? r.notes.slice(0, 32) + '…' : r.notes}</span>
               : '—' },
           ]}
-          rows={rows}
+          rows={sortDir === 'desc' ? byDateDesc : [...byDateDesc].reverse()}
           actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
           emptyMessage="No daily logs yet. Click Log Day to add one."
         />
-      )}
+      </>)}
       {showForm && <DailyForm
         initialDate={presetDate}
         existingRows={rows}
@@ -150,8 +157,6 @@ function DailyForm({ onClose, onSaved, initialDate, existingRows }) {
 
   async function save() {
     if (!f.date || f.opening_birds === '') { toast('error', 'Date and opening birds are required'); return; }
-    const gate = canLogDate(existingRows || [], f.date);
-    if (!gate.ok) { toast('error', gate.reason); return; }
     setBusy(true);
     const opening = Number(f.opening_birds) || 0;
     const mort = Number(f.mortality) || 0;

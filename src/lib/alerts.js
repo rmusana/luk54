@@ -113,12 +113,12 @@ export async function runEngine(onProgress) {
       action: 'Review flock health, feed and environment', type: 'Production' });
   }
 
-  // 6. missing daily logs — every gap, not just yesterday
+  // 6. coverage note — dates without logs (informational, never blocking)
   const { getMissingDays } = await import('./gaps.js');
   const missing = getMissingDays(daily);
   if (missing.length > 0) {
     await push({ priority: missing.length >= 3 ? 'High' : 'Medium', title: 'Missing daily production entries',
-      reason: missing.length + ' day(s) not logged: ' + missing.join(', ') + ' — backfill in order before newer days',
+      reason: missing.length + ' day(s) not logged: ' + missing.join(', ') + ' — log them any time, in any order',
       action: 'Open Operations → Daily Log and fill the missing days', deadline: missing[0], type: 'Operations' });
   }
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
 import { audit } from '../../lib/audit.js';
-import { formatDate, formatNumber, formatUGX } from '../../lib/format.js';
+import { formatDate, formatNumber, formatUGX, todayEAT } from '../../lib/format.js';
 import { BUDGET_SEED, canWrite, cashflowEvents, computeAllocation, sum } from '../../lib/finance.js';
 import { Badge, DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
 
@@ -211,6 +211,91 @@ function DistributionForm({ onClose, onSaved }) {
       <Field label="Amount (UGX)" type="number" required value={f.amount} onChange={set('amount')} />
       <Field label="Paid date (leave blank = pending)" type="date" value={f.paid_date} onChange={set('paid_date')} />
       <Field label="Reference" value={f.reference} onChange={set('reference')} />
+    </Modal>
+  );
+}
+
+/* ── Equity (standalone investor list — independent of ALL system math) ──
+ * This table is read ONLY here. financialSummary, cashflow, forecast,
+ * reports, dashboard and alerts never touch equity_items. */
+export function EquitySec({ role, setActions }) {
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [show, setShow] = useState(false);
+  const writable = canWrite(role, 'equity');
+  async function load() {
+    setLoading(true);
+    const { data, error } = await supabase.from('equity_items').select('*').order('date', { ascending: false }).limit(500);
+    if (error) toast('error', error.message);
+    else setRows(data || []);
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    setActions(writable ? <button className="btn btn-primary btn-sm" onClick={() => setShow(true)}>+ Add equity item</button> : null);
+    return () => setActions(null);
+  }, []);
+  async function onDelete(row) {
+    const ok = await confirm({ title: 'Delete equity item', message: 'Delete "' + (row.item || '') + '"? This cannot be undone.', confirmLabel: 'Delete', danger: true });
+    if (!ok) return;
+    const { error } = await supabase.from('equity_items').delete().eq('id', row.id);
+    if (error) toast('error', error.message);
+    else { audit('DELETE', 'equity_items', row.id, 'Deleted equity item ' + (row.item || '') + ' ' + (row.amount || 0)); toast('success', 'Deleted'); load(); }
+  }
+  const total = sum(rows, 'amount');
+  return (
+    <>
+      <div className="card kpi-card mb-4" style={{ maxWidth: 280 }}>
+        <div className="kpi-label">Total equity</div>
+        <div className="kpi-value">{formatUGX(total)}</div>
+        <div className="kpi-insight">Standalone list — not part of any system totals</div>
+      </div>
+      {loading ? <div className="skeleton" style={{ height: 140 }} /> : (
+        <DataTable columns={[
+          { key: 'd', label: 'Date', accessor: (r) => formatDate(r.date) },
+          { key: 'i', label: 'Item', accessor: (r) => r.item || '—' },
+          { key: 'a', label: 'Amount', accessor: (r) => formatUGX(r.amount) },
+          { key: 'n', label: 'Notes', accessor: (r) => r.notes || '—' },
+        ]} rows={rows}
+          actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
+          onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
+          emptyMessage="No equity items yet." />
+      )}
+      {show && <EquityForm onClose={() => setShow(false)} onSaved={() => { setShow(false); load(); }} />}
+    </>
+  );
+}
+
+function EquityForm({ onClose, onSaved }) {
+  const toast = useToast();
+  const [f, setF] = useState({ date: todayEAT(), item: '', amount: '', notes: '' });
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  async function save(andAnother) {
+    if (!f.date || !f.item || !f.amount) { toast('error', 'Date, item and amount are required'); return; }
+    setBusy(true);
+    const { data: insData, error } = await supabase.from('equity_items').insert({
+      project_id: 'LUK54', date: f.date, item: f.item,
+      amount: Number(f.amount) || 0, notes: f.notes || '',
+    }).select('id').single();
+    setBusy(false);
+    if (error) { toast('error', error.message); return; }
+    audit('CREATE', 'equity_items', insData?.id, 'Equity item ' + f.item + ' ' + f.amount);
+    toast('success', 'Equity item added');
+    if (andAnother) setF({ date: todayEAT(), item: '', amount: '', notes: '' });
+    else onSaved();
+  }
+  return (
+    <Modal title="Add equity item" onClose={onClose}
+      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+        <button className="btn btn-secondary" disabled={busy} onClick={() => save(true)}>Save & add another</button>
+        <button className="btn btn-primary" disabled={busy} onClick={() => save(false)}>{busy ? 'Saving…' : 'Save'}</button></>}>
+      <Field label="Date" type="date" required value={f.date} onChange={set('date')} />
+      <Field label="Item" required value={f.item} onChange={set('item')} placeholder="e.g. Land title share" />
+      <Field label="Amount (UGX)" type="number" required value={f.amount} onChange={set('amount')} />
+      <Field label="Notes" type="textarea" value={f.notes} onChange={set('notes')} />
     </Modal>
   );
 }
