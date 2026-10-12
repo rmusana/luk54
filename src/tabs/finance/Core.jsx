@@ -153,7 +153,7 @@ export function SummarySec({ data, role, onAddCapital }) {
 }
 
 /* ── Disbursements (capital) ── */
-export function CapitalSec({ role, setActions, autoOpen, onConsumed }) {
+export function CapitalSec({ role, setActions, autoOpen, onConsumed, commercial }) {
   const toast = useToast();
   const confirm = useConfirm();
   const { rows, loading, reload } = useFinTable('capital_contributions');
@@ -191,20 +191,22 @@ export function CapitalSec({ role, setActions, autoOpen, onConsumed }) {
           onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
           emptyMessage="No disbursements recorded." />
       )}
-      {show && <CapitalForm onClose={() => setShow(false)} onSaved={() => { setShow(false); reload(); }} />}
+      {show && <CapitalForm commercial={commercial} onClose={() => setShow(false)} onSaved={() => { setShow(false); reload(); }} />}
     </>
   );
 }
 
-function CapitalForm({ onClose, onSaved }) {
+function CapitalForm({ onClose, onSaved, commercial }) {
   const toast = useToast();
   const [f, setF] = useState({ date: todayEAT(), amount: '', purpose: 'General', reference: '', notes: '' });
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [label, setLabel] = useState('Save');
+  const [agreed, setAgreed] = useState(false);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   async function save() {
     if (!f.date || !f.amount) { toast('error', 'Date and amount are required'); return; }
+    if (commercial && !agreed) { toast('error', 'Tick the confirmation below first'); return; }
     if (!isOnline() && file) {
       toast('error', 'Receipt photos need a connection — save without the receipt, or reconnect and retry');
       return;
@@ -239,6 +241,15 @@ function CapitalForm({ onClose, onSaved }) {
       <Field label="Amount (UGX)" type="number" required value={f.amount} onChange={set('amount')} />
       <Field label="Purpose" type="select" value={f.purpose} onChange={set('purpose')} options={CAPITAL_PURPOSES} />
       <Field label="Reference" value={f.reference} onChange={set('reference')} />
+      {commercial && (
+        <div className="card pad-3 mb-4" style={{ borderColor: 'var(--color-caution)', background: 'var(--color-caution-soft)' }}>
+          <div className="u-text-sm" style={{ fontWeight: 600, marginBottom: 6 }}>Commercial production is active</div>
+          <label className="u-text-sm" style={{ display: 'flex', gap: 8, alignItems: 'flex-start', cursor: 'pointer' }}>
+            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} style={{ marginTop: 3 }} />
+            <span>This top-up was mutually agreed before saving.</span>
+          </label>
+        </div>
+      )}
       <div className="form-group">
         <label className="form-label">Receipt (optional)</label>
         <input className="form-input" type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv"

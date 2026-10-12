@@ -55,6 +55,42 @@ export function budgetStats(lines) {
   return { totalBudget, spent, adherence: Math.round(adherence) };
 }
 
+export const STOCKING_DATE = '2026-06-01';
+export const CYCLE_MONTHS = 20;
+
+function addMonths(date, n) {
+  const d = new Date(date.getTime());
+  const day = d.getDate();
+  d.setMonth(d.getMonth() + n);
+  if (d.getDate() < day) d.setDate(0);
+  return d;
+}
+
+function key10(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+/* 20-month production cycle. Commercial start = first log at >=85%,
+ * otherwise the expected week-25 date. Returns dates + days remaining. */
+export function cycleHorizon(daily) {
+  const sorted = [...(daily || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const start = new Date(STOCKING_DATE + 'T00:00:00');
+  let commercialDate = null;
+  for (const r of sorted) {
+    const birds = Number(r.closing_birds) || Number(r.opening_birds);
+    const eggs = Number(r.eggs_collected);
+    if (birds > 0 && (eggs / birds) * 100 >= 85) { commercialDate = new Date(r.date); break; }
+  }
+  const reached = commercialDate != null;
+  if (!reached) commercialDate = new Date(start.getTime() + 24 * 7 * 86400000);
+  const endDate = addMonths(commercialDate, CYCLE_MONTHS);
+  const now = new Date();
+  const daysLeft = Math.ceil((endDate - now) / 86400000);
+  const totalDays = Math.max(1, Math.round((endDate - start) / 86400000));
+  const elapsedPct = Math.min(100, Math.max(0, Math.round(((now - start) / (endDate - start)) * 100)));
+  return { reached, commercialDateKey: key10(commercialDate), endDateKey: key10(endDate), daysLeft, elapsedPct };
+}
+
 export function commercialStatus(production) {
   let reached = false, daysTo = null;
   if (production.layingPercent != null && production.layingPercent >= 85) reached = true;
@@ -100,6 +136,7 @@ export function computeSummary({ capital, expenses, sales, daily, budgetLines, c
   const feed = feedStats(daily);
   const budget = budgetStats(budgetLines);
   const commercial = commercialStatus(production);
+  const cycle = cycleHorizon(daily);
 
   let feedAllocation = 0, grossProfit = 0, operatingShare = 0, netProfit = 0;
   if (commercial.reached) {
@@ -126,6 +163,7 @@ export function computeSummary({ capital, expenses, sales, daily, budgetLines, c
     budgetSpent: budget.spent, budgetTotal: budget.totalBudget,
     productionPercent: production.layingPercent, productionTargetMin: 88, productionTargetMax: 92,
     commercialReached: commercial.reached, daysToCommercial: commercial.daysTo,
+    cycle,
     currentWeek: production.week, birdCount: production.birds,
     mortalityRate: mortality.rate, mortalityCount: mortality.count,
     feedDaysRemaining: feed.daysRemaining, feedEfficiency: feed.kgPerDozen,

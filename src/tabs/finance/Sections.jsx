@@ -138,6 +138,14 @@ export function AllocationSec({ role, data, setActions }) {
 }
 
 /* ── Profit distribution ── */
+function distDue(month) {
+  const m = /^(\d{4})-(\d{2})$/.exec(String(month || ''));
+  if (!m) return null;
+  const due = new Date(Date.UTC(Number(m[1]), Number(m[2]), 0));
+  due.setUTCDate(due.getUTCDate() + 30);
+  return due.toISOString().slice(0, 10);
+}
+
 export function ProfitSec({ role, data, setActions, onChanged }) {
   const toast = useToast();
   const confirm = useConfirm();
@@ -148,6 +156,7 @@ export function ProfitSec({ role, data, setActions, onChanged }) {
     return () => setActions(null);
   }, []);
   const rows = data.distributions;
+  const todayKey = new Date().toISOString().slice(0, 10);
   const paid = rows.filter((d) => d.status === 'Paid').reduce((s, r) => s + Number(r.amount || 0), 0);
   const pending = rows.filter((d) => d.status !== 'Paid').reduce((s, r) => s + Number(r.amount || 0), 0);
 
@@ -177,6 +186,12 @@ export function ProfitSec({ role, data, setActions, onChanged }) {
         { key: 'a', label: 'Amount', accessor: (r) => formatUGX(r.amount) },
         { key: 's', label: 'Status', accessor: (r) => <Badge tone={r.status === 'Paid' ? 'positive' : 'caution'}>{r.status}</Badge> },
         { key: 'p', label: 'Paid date', accessor: (r) => r.paid_date || '—' },
+        { key: 'due', label: 'Due', accessor: (r) => {
+          const due = distDue(r.month);
+          if (!due) return '—';
+          if (r.status !== 'Paid' && todayKey > due) return <span>{formatDate(due)} <Badge tone="critical">Overdue</Badge></span>;
+          return formatDate(due);
+        } },
       ]} rows={rows}
         actions={writable ? [{ id: 'paid', label: 'Mark paid' }, { id: 'delete', label: 'Delete', danger: true }] : null}
         onAction={(a, row) => { if (a === 'paid') markPaid(row); if (a === 'delete') onDelete(row); }}

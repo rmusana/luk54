@@ -237,6 +237,27 @@ export default function Dashboard({ role, onNavigate, setActions }) {
         )}
       </div>
 
+      {summary?.cycle && (
+        <div className="card" style={{ padding: 18, marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+            <h3 style={{ margin: 0, fontSize: 14 }}>Production cycle</h3>
+            {summary.cycle.daysLeft < 0
+              ? <Badge tone="critical">Cycle ended</Badge>
+              : summary.cycle.daysLeft <= 60
+                ? <Badge tone="caution">{summary.cycle.daysLeft} days left</Badge>
+                : <Badge tone="neutral">{summary.cycle.daysLeft} days left</Badge>}
+          </div>
+          <div style={{ height: 10, background: 'var(--color-bg-subtle)', borderRadius: 999, overflow: 'hidden', margin: '10px 0' }}>
+            <div style={{ height: '100%', width: summary.cycle.elapsedPct + '%', background: 'var(--color-accent)', borderRadius: 999, transition: 'width 700ms var(--ease-out)' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: 'var(--color-text-secondary)' }}>
+            <span>Stocked {formatDate('2026-06-01')}</span>
+            <span>Commercial {summary.cycle.reached ? '' : '(expected) '}{formatDate(summary.cycle.commercialDateKey)}</span>
+            <span>Ends {formatDate(summary.cycle.endDateKey)}</span>
+          </div>
+        </div>
+      )}
+
       <div className="grid-2" style={{ marginBottom: 18 }}>
         <div className="card" style={{ overflow: 'hidden' }}>
           <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Egg Production Trend</h3>

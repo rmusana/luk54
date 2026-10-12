@@ -161,6 +161,38 @@ export async function runEngine(onProgress) {
       action: 'Monitor production percentage daily', type: 'Production' });
   }
 
+  // 10. production cycle ending (20-month horizon)
+  try {
+    const { cycleHorizon } = await import('./dashboard.js');
+    const cyc = cycleHorizon(daily);
+    if (cyc.endDateKey) {
+      if (cyc.daysLeft < 0) {
+        await push({ priority: 'High', title: 'Production cycle ended',
+          reason: 'The 20-month production cycle ended on ' + cyc.endDateKey + '. Reconcile accounts and settle profits due.',
+          action: 'Open Reports for the final statements', deadline: cyc.endDateKey, type: 'Production' });
+      } else if (cyc.daysLeft <= 60) {
+        await push({ priority: 'Medium', title: 'Production cycle ending',
+          reason: cyc.daysLeft + ' days remain until the end of the 20-month cycle (' + cyc.endDateKey + ')',
+          action: 'Plan off-laying and final reconciliation', deadline: cyc.endDateKey, type: 'Production' });
+      }
+    }
+  } catch (e) {}
+
+  // 11. profit distribution overdue (30 days after month end)
+  for (const d of dist) {
+    if (String(d.status) === 'Paid') continue;
+    const m = /^(\d{4})-(\d{2})$/.exec(String(d.month || ''));
+    if (!m) continue;
+    const due = new Date(Date.UTC(Number(m[1]), Number(m[2]), 0));
+    due.setUTCDate(due.getUTCDate() + 30);
+    const dueKey = due.toISOString().slice(0, 10);
+    if (todayKey > dueKey) {
+      await push({ priority: 'High', title: 'Profit distribution overdue (' + d.month + ')',
+        reason: 'Distribution for ' + d.month + ' was due by ' + dueKey,
+        action: 'Mark paid under Finance → Profit Distribution', deadline: dueKey, type: 'Finance' });
+    }
+  }
+
   return { evaluated: true, created: created.length, alerts: created };
 }
 

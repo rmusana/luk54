@@ -99,6 +99,10 @@ insert into flock_sections (project_id, section_id, label, bird_count) values
 on conflict (project_id, section_id) do nothing;
 insert into vaccination_schedule (project_id, week, vaccine, planned_date, status) values
  ('LUK54',1,'NEWCASTLE IB','2026-06-01','Pending'),('LUK54',2,'GUMBOLO 1','2026-06-08','Pending'),
- ('LUK54',3,'GUMBOLO 2','2026-06-15','Pending'),('LUK54',4,'NEWCASTLE LASOTA','2026-06-22','Pending'),
- ('LUK54',8,'NEWCASTLE LASOTA','2026-07-20','Pending'),('LUK54',12,'NEWCASTLE LASOTA','2026-08-17','Pending')
+ ('LUK54',3,'GUMBOLO 2','2026-06-15','Pending'),('LUK54',4,'NEWCASTLE PLAIN','2026-06-22','Pending'),
+ ('LUK54',6,'FOWL POX','2026-07-06','Pending'),('LUK54',8,'DEWORMING','2026-07-20','Pending'),
+ ('LUK54',10,'DEBEAKING','2026-08-03','Pending'),('LUK54',12,'FOWL TYPHOID','2026-08-17','Pending'),
+ ('LUK54',4,'NEWCASTLE LASOTA','2026-06-22','Pending'),('LUK54',8,'NEWCASTLE LASOTA','2026-07-20','Pending'),
+ ('LUK54',12,'NEWCASTLE LASOTA','2026-08-17','Pending'),('LUK54',16,'NEWCASTLE LASOTA','2026-09-14','Pending'),
+ ('LUK54',20,'NEWCASTLE LASOTA','2026-10-12','Pending'),('LUK54',24,'NEWCASTLE LASOTA','2026-11-09','Pending')
 on conflict do nothing;
