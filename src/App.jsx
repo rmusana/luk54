@@ -71,10 +71,6 @@ function Shell() {
       toast('error', 'Alerts are not available to Investment Partners');
       return;
     }
-    if (to === 'ai' && profile?.role !== 'admin' && profile?.role !== 'investment_partner') {
-      toast('error', 'The farm assistant is not available for your role');
-      return;
-    }
     if (to === 'finance' || to === 'dashboard' || to === 'operations' || to === 'reports' || to === 'alerts' || to === 'documents' || to === 'ai') setModule(to);
     else if (to === 'settings' && profile?.role === 'admin') setModule(to);
     else if (to === 'settings') toast('error', 'Settings is for Administrators');
@@ -87,7 +83,6 @@ function Shell() {
 
   useEffect(() => {
     if (profile?.role === 'investment_partner' && (module === 'operations' || module === 'alerts' || module === 'settings')) setModule('dashboard');
-    if (profile?.role === 'operating_partner' && module === 'ai') setModule('dashboard');
   }, [profile, module]);
 
   useEffect(() => {
@@ -317,7 +312,7 @@ function Shell() {
               <Settings setActions={setActions} />
             </>
           )}
-          {(module === 'ai' && (profile?.role === 'admin' || profile?.role === 'investment_partner')) && (
+          {(module === 'ai') && (
             <>
               <div className="page-header">
                 <div className="page-header-title">
@@ -327,7 +322,7 @@ function Shell() {
                 </div>
                 <div className="page-header-actions">{actions}</div>
               </div>
-              <AI setActions={setActions} />
+              <AI setActions={setActions} role={profile?.role} />
             </>
           )}
           {module === 'finance' && (

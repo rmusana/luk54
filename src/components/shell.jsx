@@ -70,7 +70,7 @@ export function Sidebar({ collapsed, onCollapse, onSoon, module, onNavigate, rol
           <div className="nav-section-title">Insights</div>
           {item(Icon.reports, 'Reports', module === 'reports', () => onNavigate('reports'))}
           {(role === 'admin' || role === 'operating_partner') && item(Icon.bell, 'Alerts', module === 'alerts', () => onNavigate('alerts'))}
-          {(role === 'admin' || role === 'investment_partner') && item(Icon.spark || Icon.info, 'Assistant', module === 'ai', () => onNavigate('ai'))}
+          {item(Icon.spark || Icon.info, 'Assistant', module === 'ai', () => onNavigate('ai'))}
           {item(Icon.docs, 'Documents', module === 'documents', () => onNavigate('documents'))}
           {role === 'admin' && (
           <div className="nav-section">
@@ -159,9 +159,7 @@ export function MobileNav({ onSoon, module, onNavigate, role }) {
       {(role === 'admin' || role === 'operating_partner') && (
       <button className={'mobile-nav-item' + (module === 'alerts' ? ' active' : '')} onClick={() => onNavigate('alerts')}>{Icon.bell}<span>Alerts</span></button>
       )}
-      {(role === 'admin' || role === 'investment_partner') && (
       <button className={'mobile-nav-item' + (module === 'ai' ? ' active' : '')} onClick={() => onNavigate('ai')}>{Icon.spark}<span>AI</span></button>
-      )}
     </nav>
   );
 }
