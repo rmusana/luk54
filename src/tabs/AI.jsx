@@ -90,7 +90,7 @@ async function snapshot(role) {
     'Feed stock: ' + feedLines,
     'Vaccines overdue: ' + (overdue.map((s) => s.vaccine).join(', ') || 'none') + ' | due within 7 days: ' + (dueSoon.map((s) => s.vaccine).join(', ') || 'none'),
     'Flock sections: ' + flockLine + ' (total ' + formatNumber(flockTotal, 0) + ')',
-    'Days without logs: ' + (missing.length ? missing.length + ' (' + missing.join(', ') + ')' : 'none — fully logged'),
+    'Days without logs: ' + (D.length === 0 ? 'no logs recorded yet' : (missing.length ? missing.length + ' (' + missing.join(', ') + ')' : 'none — fully logged')),
     'Sales records: ' + S.length + ' (' + formatNumber(S.reduce((s, r) => s + Number(r.quantity_trays || 0), 0), 1) + ' trays, ' + formatUGX(revenue) + ')',
     'Expense records: ' + E.length + ' (' + formatUGX(E.reduce((s, r) => s + Number(r.amount || 0), 0)) + ')',
     'Open alerts: ' + (openAlerts.map((a) => a.priority + ': ' + a.title).join(' | ') || 'none'),
