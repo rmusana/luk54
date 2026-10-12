@@ -250,7 +250,6 @@ export function EquitySec({ role, setActions }) {
       <div className="card kpi-card mb-4" style={{ maxWidth: 280 }}>
         <div className="kpi-label">Total equity</div>
         <div className="kpi-value">{formatUGX(total)}</div>
-        <div className="kpi-insight">Standalone list — not part of any system totals</div>
       </div>
       {loading ? <div className="skeleton" style={{ height: 140 }} /> : (
         <DataTable columns={[
