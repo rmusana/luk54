@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient.js';
 import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, todayEAT } from '../../lib/format.js';
 import { DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
+import { Icon } from '../../components/shell.jsx';
 
 export default function FlockTab({ setActions, writable = true }) {
   const toast = useToast();
@@ -28,7 +29,7 @@ export default function FlockTab({ setActions, writable = true }) {
   useEffect(() => { load(); }, []);
 
   useEffect(() => {
-    setActions(<button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Flock event</button>);
+    setActions(<button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}><span className="btn-icon">{Icon.plus}</span>Flock event</button>);
     return () => setActions(null);
   }, []);
 
@@ -57,7 +58,7 @@ export default function FlockTab({ setActions, writable = true }) {
   return (
     <>
       <div className="card pad-4 mb-4">
-        <h3 className="u-text-sm u-font-semibold mb-3">Batch / sections (editable)</h3>
+        <h3 className="u-text-sm u-font-semibold mb-3 icon-label">{Icon.egg}Batch / sections (editable)</h3>
         <p className="u-text-xs u-text-muted mb-3">Set bird counts per section. Total drives the live flock count.</p>
         {loading ? <div className="skeleton" style={{ height: 80 }} /> : sections.map((s) => (
           <div className="form-row mb-3" key={s.id}>
@@ -69,9 +70,9 @@ export default function FlockTab({ setActions, writable = true }) {
           <div className="card kpi-card"><div className="kpi-label">Total birds (all sections)</div>
             <div className="kpi-value">{formatNumber(total)}</div></div>
         </div>
-        {writable && <button className="btn btn-secondary mt-4" disabled={saving} onClick={saveSections}>{saving ? 'Saving…' : 'Save sections'}</button>}
+        {writable && <button className="btn btn-secondary mt-4" disabled={saving} onClick={saveSections}><span className="btn-icon">{Icon.save}</span>{saving ? 'Saving…' : 'Save sections'}</button>}
       </div>
-      <h3 className="u-text-sm u-font-semibold mb-3">Flock events</h3>
+      <h3 className="u-text-sm u-font-semibold mb-3 icon-label">{Icon.activity}Flock events</h3>
       {loading ? <div className="skeleton" style={{ height: 120 }} /> : (
         <DataTable
           columns={[
@@ -81,7 +82,7 @@ export default function FlockTab({ setActions, writable = true }) {
             { key: 'notes', label: 'Notes', accessor: (r) => r.notes || '—' },
           ]}
           rows={events}
-          actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
+          actions={writable ? [{ id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
           emptyMessage="No flock events recorded."
         />
@@ -111,8 +112,8 @@ function FlockForm({ onClose, onSaved }) {
 
   return (
     <Modal title="Flock event" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save'}</button></>}>
       <Field label="Date" type="date" required value={f.date} onChange={set('date')} />
       <Field label="Event type" type="select" required value={f.event_type} onChange={set('event_type')}
         options={['Stocking', 'Transfer', 'Culling', 'Sale of birds', 'Other']} />

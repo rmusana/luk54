@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient.js';
 import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, formatUGX, todayEAT } from '../../lib/format.js';
 import { DataTable, Field, Modal, ReceiptThumb, useConfirm, useToast } from '../../components/ui.jsx';
+import { Icon } from '../../components/shell.jsx';
 import { isOnline, smartInsert } from '../../lib/queue.js';
 
 const TRAY = 30;
@@ -29,7 +30,7 @@ export default function SalesTab({ setActions, writable = true }) {
   useEffect(() => { load(); }, []);
 
   useEffect(() => {
-    setActions(<button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Record sale</button>);
+    setActions(<button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}><span className="btn-icon">{Icon.plus}</span>Record sale</button>);
     return () => setActions(null);
   }, []);
 
@@ -60,10 +61,10 @@ export default function SalesTab({ setActions, writable = true }) {
             { key: 'price', label: 'Price/tray', accessor: (r) => formatUGX(r.unit_price) },
             { key: 'rev', label: 'Revenue', accessor: (r) => formatUGX(r.total_revenue) },
             { key: 'pay', label: 'Payment', accessor: (r) => r.payment_status || '—' },
-            { key: 'doc', label: '🧾', accessor: (r) => <ReceiptThumb path={r.document_id} name={'Sale ' + (r.date || '')} /> },
+            { key: 'doc', label: <span className="table-th-icon">{Icon.receipt}</span>, accessor: (r) => <ReceiptThumb path={r.document_id} name={'Sale ' + (r.date || '')} /> },
           ]}
           rows={rows}
-          actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
+          actions={writable ? [{ id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
           emptyMessage="No sales recorded yet."
         />
@@ -135,8 +136,8 @@ function SaleForm({ onClose, onSaved }) {
 
   return (
     <Modal title="Record sale" size="lg" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? busyLabel : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? busyLabel : 'Save'}</button></>}>
       <Field label="Date" type="date" required value={f.date} onChange={set('date')} />
       <div className="form-row">
         <Field label="Sale type" type="select" value={f.sale_category} onChange={set('sale_category')} options={['Eggs', 'Litter', 'Others']} />

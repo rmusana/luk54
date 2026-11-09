@@ -6,6 +6,7 @@ import { getMissingDays } from '../lib/gaps.js';
 
 const MODEL = 'nvidia/nemotron-3-super-120b-a12b:free';
 import { useToast } from '../components/ui.jsx';
+import { Icon } from '../components/shell.jsx';
 
 /* Minimal safe rich text: escape HTML, then bold + bullets + line breaks. */
 function esc(s) {
@@ -196,6 +197,7 @@ export default function AI({ setActions, role }) {
     return (
       <div className="card"><div className="card-body">
         <div className="empty-state">
+          <div className="card-icon is-caution" style={{ margin: '0 auto 10px' }}>{Icon.spark}</div>
           <p className="empty-state-title">AI not configured yet</p>
           <p className="empty-state-desc">The administrator needs to add the free AI key once. After that, this assistant answers only from live farm records.</p>
         </div>
@@ -205,7 +207,10 @@ export default function AI({ setActions, role }) {
 
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 220px)', minHeight: 420 }}>
-      <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Farm Assistant</h3><span className="u-text-xs u-text-muted">Fenced to your records</span></div>
+      <div className="card-header">
+        <h3 className="card-title" style={{ margin: 0, fontSize: 14 }}><span className="card-icon is-positive" style={{ width: 28, height: 28 }}>{Icon.spark}</span>Farm Assistant</h3>
+        <span className="u-text-xs u-text-muted">Fenced to your records</span>
+      </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {msgs.map((m, i) => (
           <div key={i} style={{
@@ -215,17 +220,17 @@ export default function AI({ setActions, role }) {
             color: m.from === 'you' ? '#fff' : 'var(--color-text)',
           }}>{m.from === 'ai' ? <span dangerouslySetInnerHTML={rich(m.text)} /> : m.text}</div>
         ))}
-        {busy && <div className="u-text-xs u-text-muted">Thinking from your records…</div>}
+        {busy && <div className="u-text-xs u-text-muted icon-label">{Icon.clock}Thinking from your records…</div>}
         <div ref={bottom} />
       </div>
       <form onSubmit={ask} style={{ display: 'flex', gap: 8, padding: '12px 12px 4px', borderTop: '1px solid var(--color-border)' }}>
         <input className="form-input" value={input} onChange={(e) => setInput(e.target.value)}
           placeholder={isOps ? 'e.g. Which vaccines are due?' : 'e.g. Why did production dip last week?'} style={{ marginBottom: 0 }} />
-        <button className="btn btn-primary btn-sm" disabled={busy} type="submit">Ask</button>
+        <button className="btn btn-primary btn-sm" disabled={busy} type="submit"><span className="btn-icon">{Icon.send}</span>Ask</button>
       </form>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '8px 12px 12px' }}>
         {chips.map((c) => (
-          <button key={c} className="btn btn-secondary btn-sm" disabled={busy} onClick={() => askText(c)}>{c}</button>
+          <button key={c} className="btn btn-secondary btn-sm" disabled={busy} onClick={() => askText(c)}><span className="btn-icon">{Icon.message}</span>{c}</button>
         ))}
       </div>
     </div>

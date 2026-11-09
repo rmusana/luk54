@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient.js';
 import { formatDate } from '../lib/format.js';
 import { audit } from '../lib/audit.js';
 import { Badge, DataTable, Field, Modal, useConfirm, useToast } from '../components/ui.jsx';
+import { Icon } from '../components/shell.jsx';
 
 const ROLE_LABEL = { admin: 'Administrator', operating_partner: 'Operating Partner', investment_partner: 'Investment Partner' };
 const ROLES = ['admin', 'operating_partner', 'investment_partner'];
@@ -60,16 +61,16 @@ export default function Settings({ setActions }) {
   }
 
   const SECS = [
-    ['project', 'Project'], ['contacts', 'Contacts'], ['users', 'Users & Roles'],
-    ['notifications', 'Notifications'], ['security', 'Security'], ['activity', 'Activity Log'], ['backup', 'Backup'],
+    ['project', 'Project', Icon.home], ['contacts', 'Contacts', Icon.phone], ['users', 'Users & Roles', Icon.users],
+    ['notifications', 'Notifications', Icon.bell], ['security', 'Security', Icon.shield], ['activity', 'Activity Log', Icon.activity], ['backup', 'Backup', Icon.database],
   ];
 
   return (
     <>
       <div className="pill-tabs">
-        {SECS.map(([id, label]) => (
+        {SECS.map(([id, label, icon]) => (
           <button key={id} className={'btn btn-sm ' + (section === id ? 'btn-primary' : 'btn-ghost')}
-            onClick={() => setSection(id)}>{label}</button>
+            onClick={() => setSection(id)}><span className="btn-icon">{icon}</span>{label}</button>
         ))}
       </div>
       {loading ? <div className="skeleton" style={{ height: 160 }} /> : (
@@ -107,7 +108,7 @@ function SettingsForm({ keys, values, onSave }) {
       {keys.map(([k, label]) => (
         <Field key={k} label={label} value={f[k] ?? ''} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
       ))}
-      <button className="btn btn-primary btn-sm" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save settings'}</button>
+      <button className="btn btn-primary btn-sm" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save settings'}</button>
     </div>
   );
 }
@@ -136,12 +137,12 @@ function UsersSec({ users, onChanged }) {
         { key: 'r', label: 'Role', accessor: (r) => <Badge tone={r.role === 'admin' ? 'critical' : r.role === 'operating_partner' ? 'info' : 'positive'}>{ROLE_LABEL[r.role] || r.role}</Badge> },
         { key: 'c', label: 'Since', accessor: (r) => formatDate(r.created_at) },
       ]} rows={users}
-        actions={[{ id: 'role', label: 'Change role' }]}
+        actions={[{ id: 'role', label: 'Change role', icon: Icon.key }]}
         onAction={(a, row) => { if (a === 'role') setEditing(row); }}
         emptyMessage="No users." />
       {editing && (
         <Modal title={'Role for ' + editing.email} onClose={() => setEditing(null)}
-          footer={<button className="btn btn-secondary" onClick={() => setEditing(null)}>Close</button>}>
+          footer={<button className="btn btn-secondary" onClick={() => setEditing(null)}><span className="btn-icon">{Icon.x}</span>Close</button>}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {ROLES.map((r) => (
               <button key={r} className={'btn btn-sm ' + (editing.role === r ? 'btn-primary' : 'btn-secondary')}
@@ -151,7 +152,7 @@ function UsersSec({ users, onChanged }) {
             ))}
           </div>
           <p className="u-text-xs u-text-muted" style={{ marginTop: 12 }}>Takes effect on their next refresh. The change itself is recorded in the Activity Log.</p>
-          <button className="btn btn-ghost btn-sm" onClick={() => deactivate(editing)}>Deactivate…</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => deactivate(editing)}><span className="btn-icon">{Icon.xCircle}</span>Deactivate…</button>
         </Modal>
       )}
     </>
@@ -176,7 +177,7 @@ function SecuritySec() {
       <h3 className="u-text-sm u-font-semibold mb-3">Change my password</h3>
       <Field label="New password" type="password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} />
       <Field label="Confirm password" type="password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} />
-      <button className="btn btn-primary btn-sm" disabled={busy} onClick={change}>{busy ? 'Saving…' : 'Update password'}</button>
+      <button className="btn btn-primary btn-sm" disabled={busy} onClick={change}><span className="btn-icon">{Icon.key}</span>{busy ? 'Saving…' : 'Update password'}</button>
     </div>
   );
 }
@@ -258,7 +259,7 @@ function BackupSec() {
     <div className="card pad-4">
       <h3 className="u-text-sm u-font-semibold mb-3">Backup & Restore</h3>
       <p className="u-text-sm u-text-secondary mb-4">Downloads every table as one JSON file. Supabase also keeps automatic daily backups. To restore, contact the system builder with the file.</p>
-      <button className="btn btn-primary btn-sm" disabled={busy} onClick={exportAll}>{busy ? 'Exporting…' : 'Download full backup'}</button>
+      <button className="btn btn-primary btn-sm" disabled={busy} onClick={exportAll}><span className="btn-icon">{Icon.download}</span>{busy ? 'Exporting…' : 'Download full backup'}</button>
     </div>
   );
 }

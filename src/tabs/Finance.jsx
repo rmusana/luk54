@@ -5,17 +5,18 @@ import { useToast } from '../components/ui.jsx';
 import { CapitalSec, ExpensesSec, SummarySec } from './finance/Core.jsx';
 import { AllocationSec, CashflowSec, EquitySec, ProfitSec, RevenueSec } from './finance/Sections.jsx';
 import { GrowthRateSec } from './finance/GrowthRate.jsx';
+import { Icon } from '../components/shell.jsx';
 
 const SUBS = [
-  { id: 'overview', label: 'Overview', roles: ['admin', 'operating_partner', 'investment_partner'] },
-  { id: 'capital', label: 'Disbursements', roles: ['admin', 'investment_partner'] },
-  { id: 'revenue', label: 'Revenue', roles: ['admin', 'operating_partner', 'investment_partner'] },
-  { id: 'expenses', label: 'Expenses', roles: ['admin', 'operating_partner', 'investment_partner'] },
-  { id: 'allocation', label: 'Revenue Allocation', roles: ['admin', 'investment_partner'] },
-  { id: 'profit', label: 'Profit Distribution', roles: ['admin', 'investment_partner'] },
-  { id: 'equity', label: 'Equity', roles: ['admin', 'investment_partner'] },
-  { id: 'growth', label: 'Growth Rate', roles: ['admin', 'investment_partner'] },
-  { id: 'cashflow', label: 'Cash Flow', roles: ['admin', 'operating_partner', 'investment_partner'] },
+  { id: 'overview', label: 'Overview', icon: Icon.dashboard, roles: ['admin', 'operating_partner', 'investment_partner'] },
+  { id: 'capital', label: 'Disbursements', icon: Icon.banknote, roles: ['admin', 'investment_partner'] },
+  { id: 'revenue', label: 'Revenue', icon: Icon.coins, roles: ['admin', 'operating_partner', 'investment_partner'] },
+  { id: 'expenses', label: 'Expenses', icon: Icon.receipt, roles: ['admin', 'operating_partner', 'investment_partner'] },
+  { id: 'allocation', label: 'Revenue Allocation', icon: Icon.pieChart, roles: ['admin', 'investment_partner'] },
+  { id: 'profit', label: 'Profit Distribution', icon: Icon.trendUp, roles: ['admin', 'investment_partner'] },
+  { id: 'equity', label: 'Equity', icon: Icon.layers, roles: ['admin', 'investment_partner'] },
+  { id: 'growth', label: 'Growth Rate', icon: Icon.growth, roles: ['admin', 'investment_partner'] },
+  { id: 'cashflow', label: 'Cash Flow', icon: Icon.wallet, roles: ['admin', 'operating_partner', 'investment_partner'] },
 ];
 
 export default function Finance({ role, setActions }) {
@@ -60,7 +61,7 @@ export default function Finance({ role, setActions }) {
       <div className="pill-tabs">
         {allowed.map((s) => (
           <button key={s.id} className={'btn btn-sm ' + (s.id === activeSub ? 'btn-primary' : 'btn-ghost')}
-            onClick={() => { setActions(null); setSub(s.id); }}>{s.label}</button>
+            onClick={() => { setActions(null); setSub(s.id); }}><span className="btn-icon">{s.icon}</span>{s.label}</button>
         ))}
       </div>
       {loading ? <div className="skeleton" style={{ height: 160 }} /> : (

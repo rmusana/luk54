@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { formatDate, formatNumber, formatUGX } from '../lib/format.js';
 import { REPORTS, generateReport, shiftWeek, weekRange } from '../lib/reports.js';
 import { DataTable, useToast } from '../components/ui.jsx';
+import { Icon } from '../components/shell.jsx';
 
 const COUNT = new Set(['Eggs collected', 'Sales count', 'Days logged', 'Total eggs', 'Total mortality',
   'Purchase lines', 'Total deaths', 'Days with losses', 'Scheduled', 'Completed', 'Overdue',
@@ -35,9 +36,9 @@ export default function Reports({ setActions }) {
             'LUK54 ' + report.title + ' — ' + report.period + '\n' +
             report.kpis.slice(0, 6).map(([l, v]) => l + ': ' + (typeof v === 'number' ? v.toLocaleString() : v)).join('\n')
           )}>
-          WhatsApp
+          <span className="btn-icon">{Icon.message}</span>WhatsApp
         </a>
-        <button className="btn btn-secondary btn-sm" onClick={() => window.print()}>Print / PDF</button>
+        <button className="btn btn-secondary btn-sm" onClick={() => window.print()}><span className="btn-icon">{Icon.printer}</span>Print / PDF</button>
       </>
     ) : null);
     return () => setActions(null);
@@ -102,9 +103,9 @@ export default function Reports({ setActions }) {
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Week (YYYY-Www)</label>
               <div style={{ display: 'flex', gap: 6 }}>
-                <button className="btn btn-secondary btn-sm" onClick={() => setWeek(shiftWeek(week, -1))}>◀ Prev</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => setWeek(shiftWeek(week, -1))}><span className="btn-icon">{Icon.chevronLeft}</span>Prev</button>
                 <input className="form-input" value={week} onChange={(e) => setWeek(e.target.value)} placeholder="e.g. 2026-W40" style={{ flex: 1 }} />
-                <button className="btn btn-secondary btn-sm" onClick={() => setWeek(shiftWeek(week, 1))}>Next ▶</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => setWeek(shiftWeek(week, 1))}>Next<span className="btn-icon">{Icon.chevronRight}</span></button>
               </div>
               <div className="form-hint">
                 {(() => { const r = weekRange(week); return r ? week + ' = ' + r.start + ' → ' + r.end + '.' : 'Tap Prev for last week.'; })()}
@@ -112,7 +113,7 @@ export default function Reports({ setActions }) {
             </div>
           )}
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <button className="btn btn-primary" disabled={busy} onClick={generate}>{busy ? 'Generating…' : 'Generate report'}</button>
+            <button className="btn btn-primary" disabled={busy} onClick={generate}><span className="btn-icon">{Icon.fileText}</span>{busy ? 'Generating…' : 'Generate report'}</button>
           </div>
         </div>
       </div>

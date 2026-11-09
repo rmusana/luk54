@@ -4,6 +4,7 @@ import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, formatUGX, todayEAT } from '../../lib/format.js';
 import { BUDGET_SEED, canWrite, cashflowEvents, computeAllocation, sum } from '../../lib/finance.js';
 import { Badge, DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
+import { Icon } from '../../components/shell.jsx';
 
 /* ── Revenue (sales ledger, read-only — sales are recorded in Operations) ── */
 export function RevenueSec({ data }) {
@@ -72,7 +73,7 @@ export function BudgetSec({ data }) {
       {!lines.length && (
         <div className="card pad-4 mb-4">
           <p className="u-text-sm u-text-secondary">No budget lines yet. Seed the 2,500-bird rough budget to start tracking.</p>
-          <button className="btn btn-primary btn-sm" disabled={busy} onClick={seed}>{busy ? 'Seeding…' : 'Seed budget'}</button>
+          <button className="btn btn-primary btn-sm" disabled={busy} onClick={seed}><span className="btn-icon">{Icon.database}</span>{busy ? 'Seeding…' : 'Seed budget'}</button>
         </div>
       )}
       <DataTable columns={[
@@ -115,7 +116,7 @@ export function AllocationSec({ role, data, setActions }) {
         <div className="form-row" style={{ alignItems: 'end' }}>
           <Field label="Month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
           <div className="form-group" style={{ marginBottom: 0 }}>
-            {writable && <button className="btn btn-primary btn-sm" disabled={busy} onClick={finalize}>{busy ? 'Finalizing…' : 'Finalize month'}</button>}
+            {writable && <button className="btn btn-primary btn-sm" disabled={busy} onClick={finalize}><span className="btn-icon">{Icon.checkCircle}</span>{busy ? 'Finalizing…' : 'Finalize month'}</button>}
           </div>
         </div>
         <p className="u-text-xs u-text-muted">50% of sales → feed · remaining 50% = gross profit · 25% of gross profit → Operating Partner · balance → Investment Partner. Active only after commercial production.</p>
@@ -126,7 +127,7 @@ export function AllocationSec({ role, data, setActions }) {
         <div className="card kpi-card"><div className="kpi-label">Operating Partner 25%</div><div className="kpi-value" style={{ fontSize: '1.2rem' }}>{formatUGX(calc.operatingPartnerShare)}</div></div>
         <div className="card kpi-card"><div className="kpi-label">Net to investor</div><div className="kpi-value" style={{ fontSize: '1.2rem' }}>{formatUGX(calc.netProfitToInvestor)}</div></div>
       </div>
-      <h3 className="u-text-sm u-font-semibold mb-3">Finalized months</h3>
+      <h3 className="u-text-sm u-font-semibold mb-3 icon-label">{Icon.calendar}Finalized months</h3>
       <DataTable columns={[
         { key: 'm', label: 'Month', accessor: (r) => r.month },
         { key: 'g', label: 'Gross sales', accessor: (r) => formatUGX(r.gross_sales_revenue) },
@@ -152,7 +153,7 @@ export function ProfitSec({ role, data, setActions, onChanged }) {
   const [show, setShow] = useState(false);
   const writable = canWrite(role, 'profit');
   useEffect(() => {
-    setActions(writable ? <button className="btn btn-primary btn-sm" onClick={() => setShow(true)}>+ Record distribution</button> : null);
+    setActions(writable ? <button className="btn btn-primary btn-sm" onClick={() => setShow(true)}><span className="btn-icon">{Icon.plus}</span>Record distribution</button> : null);
     return () => setActions(null);
   }, []);
   const rows = data.distributions;
@@ -193,7 +194,7 @@ export function ProfitSec({ role, data, setActions, onChanged }) {
           return formatDate(due);
         } },
       ]} rows={rows}
-        actions={writable ? [{ id: 'paid', label: 'Mark paid' }, { id: 'delete', label: 'Delete', danger: true }] : null}
+        actions={writable ? [{ id: 'paid', label: 'Mark paid', icon: Icon.check }, { id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
         onAction={(a, row) => { if (a === 'paid') markPaid(row); if (a === 'delete') onDelete(row); }}
         emptyMessage="No distributions recorded." />
       {show && <DistributionForm onClose={() => setShow(false)} onSaved={() => { setShow(false); onChanged(); }} />}
@@ -220,8 +221,8 @@ function DistributionForm({ onClose, onSaved }) {
   }
   return (
     <Modal title="Record profit distribution" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save'}</button></>}>
       <Field label="Month" type="month" required value={f.month} onChange={set('month')} />
       <Field label="Amount (UGX)" type="number" required value={f.amount} onChange={set('amount')} />
       <Field label="Paid date (leave blank = pending)" type="date" value={f.paid_date} onChange={set('paid_date')} />
@@ -249,7 +250,7 @@ export function EquitySec({ role, setActions }) {
   }
   useEffect(() => { load(); }, []);
   useEffect(() => {
-    setActions(writable ? <button className="btn btn-primary btn-sm" onClick={() => setShow(true)}>+ Add equity item</button> : null);
+    setActions(writable ? <button className="btn btn-primary btn-sm" onClick={() => setShow(true)}><span className="btn-icon">{Icon.plus}</span>Add equity item</button> : null);
     return () => setActions(null);
   }, []);
   async function onDelete(row) {
@@ -273,7 +274,7 @@ export function EquitySec({ role, setActions }) {
           { key: 'a', label: 'Amount', accessor: (r) => formatUGX(r.amount) },
           { key: 'n', label: 'Notes', accessor: (r) => r.notes || '—' },
         ]} rows={rows}
-          actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
+          actions={writable ? [{ id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
           emptyMessage="No equity items yet." />
       )}
@@ -303,9 +304,9 @@ function EquityForm({ onClose, onSaved }) {
   }
   return (
     <Modal title="Add equity item" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-secondary" disabled={busy} onClick={() => save(true)}>Save & add another</button>
-        <button className="btn btn-primary" disabled={busy} onClick={() => save(false)}>{busy ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-secondary" disabled={busy} onClick={() => save(true)}><span className="btn-icon">{Icon.save}</span>Save & add another</button>
+        <button className="btn btn-primary" disabled={busy} onClick={() => save(false)}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save'}</button></>}>
       <Field label="Date" type="date" required value={f.date} onChange={set('date')} />
       <Field label="Item" required value={f.item} onChange={set('item')} placeholder="e.g. Land title share" />
       <Field label="Amount (UGX)" type="number" required value={f.amount} onChange={set('amount')} />

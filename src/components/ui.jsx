@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { Icon } from './shell.jsx';
 
 /* ── Toast ── */
 const ToastCtx = createContext(() => {});
@@ -31,7 +32,7 @@ export function Modal({ title, onClose, footer, size, children }) {
     <div className="modal-backdrop open" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className={'modal' + (size === 'lg' ? ' modal-lg' : '')} role="dialog" aria-modal="true">
         <div className="modal-header"><h3 style={{ margin: 0 }}>{title}</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close">✕</button></div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close"><span className="btn-icon">{Icon.x}</span></button></div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-footer">{footer}</div>}
       </div>
@@ -121,12 +122,17 @@ export function Badge({ tone = 'neutral', children }) {
 }
 
 /* ── Teaching empty state ── */
-export function EmptyState({ title, desc, actionLabel, onAction }) {
+export function EmptyState({ title, desc, actionLabel, actionIcon, onAction }) {
   return (
     <div className="empty-state">
       {title && <p className="empty-state-title">{title}</p>}
       {desc && <p className="empty-state-desc">{desc}</p>}
-      {actionLabel && <button className="btn btn-primary btn-sm" style={{ marginTop: 10 }} onClick={onAction}>{actionLabel}</button>}
+      {actionLabel && (
+        <button className="btn btn-primary btn-sm" style={{ marginTop: 10 }} onClick={onAction}>
+          {actionIcon && <span className="btn-icon">{actionIcon}</span>}
+          {actionLabel}
+        </button>
+      )}
     </div>
   );
 }
@@ -152,12 +158,12 @@ export function ReceiptThumb({ path, name }) {
   const isImg = /\.(png|jpe?g|gif|webp|svg)$/i.test(name || path);
   return (
     <>
-      <button className="btn btn-ghost btn-sm" title={name || path} onClick={view}>🧾</button>
+      <button className="btn btn-ghost btn-sm" title={name || path} onClick={view} aria-label="Open receipt"><span className="btn-icon">{Icon.receipt}</span></button>
       {open && (
         <Modal title={name || 'Receipt'} onClose={() => { setOpen(false); setUrl(''); }}
           footer={<>
-            {url && <a className="btn btn-secondary" href={url} target="_blank" rel="noreferrer">Open / Download</a>}
-            <button className="btn btn-secondary" onClick={() => { setOpen(false); setUrl(''); }}>Close</button>
+            {url && <a className="btn btn-secondary" href={url} target="_blank" rel="noreferrer"><span className="btn-icon">{Icon.externalLink}</span>Open / Download</a>}
+            <button className="btn btn-secondary" onClick={() => { setOpen(false); setUrl(''); }}><span className="btn-icon">{Icon.x}</span>Close</button>
           </>}>
           {err ? <div className="form-error-global">{err}</div>
             : !url ? <div className="skeleton" style={{ height: 200 }} />

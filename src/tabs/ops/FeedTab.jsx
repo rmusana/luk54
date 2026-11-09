@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient.js';
 import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, formatUGX, todayEAT } from '../../lib/format.js';
 import { DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
+import { Icon } from '../../components/shell.jsx';
 
 const PRODUCTS = ['Brand', 'Concentrate', 'Lime powder', 'Limestone', 'Soya', 'Sunflower', 'Broken', 'Maize', 'Others'];
 const MIX_FIELDS = [
@@ -48,8 +49,8 @@ export default function FeedTab({ setActions, writable = true }) {
   useEffect(() => {
     setActions(
       <>
-        <button className="btn btn-secondary btn-sm" onClick={() => setShowMix(true)}>Weekly mix</button>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowPurchase(true)}>+ Feed purchase</button>
+        <button className="btn btn-secondary btn-sm" onClick={() => setShowMix(true)}><span className="btn-icon">{Icon.calendar}</span>Weekly mix</button>
+        <button className="btn btn-primary btn-sm" onClick={() => setShowPurchase(true)}><span className="btn-icon">{Icon.plus}</span>Feed purchase</button>
       </>
     );
     return () => setActions(null);
@@ -91,7 +92,7 @@ export default function FeedTab({ setActions, writable = true }) {
           </div>
         </div>
       )}
-      <h3 className="u-text-sm u-font-semibold mb-3">Stock</h3>
+      <h3 className="u-text-sm u-font-semibold mb-3 icon-label">{Icon.package}Stock</h3>
       <div className="mb-5">
         {loading ? <div className="skeleton" style={{ height: 90 }} /> : (
           <DataTable columns={[
@@ -101,7 +102,7 @@ export default function FeedTab({ setActions, writable = true }) {
           ]} rows={inv} emptyMessage="No feed inventory yet." />
         )}
       </div>
-      <h3 className="u-text-sm u-font-semibold mb-3">Weekly mix / formulation</h3>
+      <h3 className="u-text-sm u-font-semibold mb-3 icon-label">{Icon.list}Weekly mix / formulation</h3>
       <div className="mb-5">
         {loading ? <div className="skeleton" style={{ height: 90 }} /> : (
           <DataTable columns={[
@@ -112,12 +113,12 @@ export default function FeedTab({ setActions, writable = true }) {
             { key: 'm', label: 'Maize', accessor: (r) => formatNumber(r.maize_kg, 1) },
             { key: 'o', label: 'Others', accessor: (r) => formatNumber(r.others_kg, 1) },
           ]} rows={mixes}
-            actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
+            actions={writable ? [{ id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
             onAction={(a, row) => { if (a === 'delete') delMix(row); }}
             emptyMessage="No weekly mix logged yet. Use Weekly mix to add one." />
         )}
       </div>
-      <h3 className="u-text-sm u-font-semibold mb-3">Purchases</h3>
+      <h3 className="u-text-sm u-font-semibold mb-3 icon-label">{Icon.truck}Purchases</h3>
       {loading ? <div className="skeleton" style={{ height: 120 }} /> : (
         <DataTable columns={[
           { key: 'd', label: 'Date', accessor: (r) => formatDate(r.date) },
@@ -126,7 +127,7 @@ export default function FeedTab({ setActions, writable = true }) {
           { key: 't', label: 'Total', accessor: (r) => formatUGX(r.total_cost) },
           { key: 's', label: 'Supplier', accessor: (r) => r.supplier || '—' },
         ]} rows={purch}
-          actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
+          actions={writable ? [{ id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') delPurchase(row); }}
           emptyMessage="No feed purchases yet." />
       )}
@@ -168,8 +169,8 @@ function PurchaseForm({ inv, onClose, onSaved }) {
 
   return (
     <Modal title="Feed purchase" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save'}</button></>}>
       <Field label="Date" type="date" required value={f.date} onChange={set('date')} />
       <Field label="Product" type="select" required value={f.product} onChange={set('product')} options={PRODUCTS} />
       <div className="form-row">
@@ -201,8 +202,8 @@ function MixForm({ onClose, onSaved }) {
 
   return (
     <Modal title="Weekly feed mix / formulation" size="lg" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save mix'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save mix'}</button></>}>
       <Field label="Week start" type="date" required value={f.week_start} onChange={set('week_start')} />
       <Field label="Week end" type="date" value={f.week_end} onChange={set('week_end')} />
       <p className="u-text-sm u-text-secondary">Ingredient breakdown for this week mix. Total is calculated automatically.</p>

@@ -5,17 +5,18 @@ import FeedTab from './ops/FeedTab.jsx';
 import SalesTab from './ops/SalesTab.jsx';
 import HealthTab from './ops/HealthTab.jsx';
 import { InventoryTab, MortalityTab, NotesTab, WorkersTab } from './ops/OtherTabs.jsx';
+import { Icon } from '../components/shell.jsx';
 
 const TABS = [
-  { id: 'daily', label: 'Daily Log' },
-  { id: 'flock', label: 'Flock' },
-  { id: 'feed', label: 'Feed' },
-  { id: 'sales', label: 'Sales' },
-  { id: 'health', label: 'Health & Vaccination' },
-  { id: 'mortality', label: 'Mortality' },
-  { id: 'inventory', label: 'Inventory' },
-  { id: 'workers', label: 'Workers' },
-  { id: 'notes', label: 'Staff Notes' },
+  { id: 'daily', label: 'Daily Log', icon: Icon.clipboard },
+  { id: 'flock', label: 'Flock', icon: Icon.egg },
+  { id: 'feed', label: 'Feed', icon: Icon.truck },
+  { id: 'sales', label: 'Sales', icon: Icon.cart },
+  { id: 'health', label: 'Health & Vaccination', icon: Icon.heartPulse },
+  { id: 'mortality', label: 'Mortality', icon: Icon.activity },
+  { id: 'inventory', label: 'Inventory', icon: Icon.package },
+  { id: 'workers', label: 'Workers', icon: Icon.users },
+  { id: 'notes', label: 'Staff Notes', icon: Icon.fileText },
 ];
 
 export default function Operations({ role, setActions }) {
@@ -32,7 +33,7 @@ export default function Operations({ role, setActions }) {
       <div className="pill-tabs">
         {TABS.map((t) => (
           <button key={t.id} className={'btn btn-sm ' + (t.id === tab ? 'btn-primary' : 'btn-ghost')}
-            onClick={() => { setActions(null); setTab(t.id); }}>{t.label}</button>
+            onClick={() => { setActions(null); setTab(t.id); }}><span className="btn-icon">{t.icon}</span>{t.label}</button>
         ))}
       </div>
       <div key={tab}>

@@ -6,6 +6,7 @@ import { BUDGET_SEED, CAPITAL_PURPOSES, EXPENSE_CATEGORIES, canWrite, cashflowEv
 import { Badge, DataTable, Field, Modal, ReceiptThumb, useConfirm, useToast } from '../../components/ui.jsx';
 import { BudgetSec } from './Sections.jsx';
 import { isOnline, smartInsert } from '../../lib/queue.js';
+import { Icon } from '../../components/shell.jsx';
 
 function useFinTable(table, order = 'date') {
   const toast = useToast();
@@ -49,7 +50,12 @@ export function SummarySec({ data, role, onAddCapital }) {
   const barBg = isOver
     ? 'linear-gradient(135deg, #0f2e22 0%, #1a5c3e 45%, #92400e 100%)'
     : 'linear-gradient(135deg, #0f2e22 0%, #1a5c3e 100%)';
-  const statusDot = isOver ? '● Overfunded' : isFully ? '● Fully funded' : s.commercialReached ? '● Allocation active' : '○ Pre-commercial';
+  const statusDot = (
+    <span className="icon-label">
+      <span className="status-dot" style={{ color: isOver || isFully ? '#4ade80' : 'rgba(255,255,255,0.55)' }} />
+      {isOver ? 'Overfunded' : isFully ? 'Fully funded' : s.commercialReached ? 'Allocation active' : 'Pre-commercial'}
+    </span>
+  );
   const canAddCapital = canWrite(role, 'capital');
 
   // egg trays (from operations-side tables)
@@ -67,13 +73,13 @@ export function SummarySec({ data, role, onAddCapital }) {
           <div style={{ flex: 1, minWidth: 220 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.85 }}>Funding progress</span>
-              {isOver && <span style={{ background: 'linear-gradient(135deg, #fde68a, #fbbf24)', color: '#78350f', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em', padding: '3px 9px', borderRadius: 999, boxShadow: '0 4px 14px rgba(251,191,36,0.5)', display: 'inline-flex', alignItems: 'center', gap: 5, animation: 'surplusPulse 1.8s ease-in-out infinite' }}>✦ OVERFUNDED</span>}
-              {!isOver && isFully && <span style={{ background: 'rgba(255,255,255,0.92)', color: '#065f46', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 999 }}>● 100% REACHED</span>}
+              {isOver && <span style={{ background: 'linear-gradient(135deg, #fde68a, #fbbf24)', color: '#78350f', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em', padding: '3px 9px', borderRadius: 999, boxShadow: '0 4px 14px rgba(251,191,36,0.5)', display: 'inline-flex', alignItems: 'center', gap: 5, animation: 'surplusPulse 1.8s ease-in-out infinite' }}>{Icon.arrowUp} OVERFUNDED</span>}
+              {!isOver && isFully && <span style={{ background: 'rgba(255,255,255,0.92)', color: '#065f46', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 4 }}>{Icon.checkCircle} 100% REACHED</span>}
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
               <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1 }}>{fundedPctInt}%</span>
               <span style={{ fontSize: 13, fontWeight: 600, opacity: 0.92 }}>{isOver ? 'funded · +' + excessPct + '% surplus' : 'funded'}</span>
-              {isOver && <span style={{ fontSize: 11, background: 'rgba(253,230,138,0.18)', border: '1px solid rgba(253,230,138,0.45)', color: '#fde68a', padding: '3px 8px', borderRadius: 999, fontWeight: 700 }}>↗ {fundedPctInt}% of target</span>}
+              {isOver && <span style={{ fontSize: 11, background: 'rgba(253,230,138,0.18)', border: '1px solid rgba(253,230,138,0.45)', color: '#fde68a', padding: '3px 8px', borderRadius: 999, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>{Icon.arrowUpRight} {fundedPctInt}% of target</span>}
             </div>
             <div style={{ fontSize: 12, opacity: 0.9, marginTop: 3 }}>
               {formatUGX(s.totalInvestment)} of {formatUGX(s.budgetTotal)}
@@ -88,25 +94,25 @@ export function SummarySec({ data, role, onAddCapital }) {
             <div style={{ fontSize: 11, opacity: 0.88, marginTop: 7, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               <span>{statusDot}</span><span>·</span>
               {isOver
-                ? <span style={{ color: '#fde68a', fontWeight: 700 }}>✓ Surplus {formatUGX(excessFunding)} · +{excessPct}% beyond target</span>
+                ? <span style={{ color: '#fde68a', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>{Icon.check} Surplus {formatUGX(excessFunding)} · +{excessPct}% beyond target</span>
                 : <span>Outstanding {formatUGX(s.outstandingFunding)}</span>}
             </div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.96)', color: '#141916', borderRadius: 14, padding: 14, minWidth: 210, boxShadow: '0 12px 28px rgba(0,0,0,0.18)', position: 'relative', overflow: 'hidden', border: isOver ? '1px solid #fde68a' : 'none' }}>
             {isOver && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }} />}
             <div style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              {isOver && <span style={{ animation: 'trophyFloat 2s ease-in-out infinite' }}>🏆</span>} Cash position
+              {isOver && <span style={{ animation: 'trophyFloat 2s ease-in-out infinite', display: 'inline-flex' }}>{Icon.trophy}</span>} Cash position
             </div>
             <div style={{ fontSize: 20, fontWeight: 800 }}>{formatUGX(s.cashPosition)}</div>
             <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>Net profit {formatUGX(s.netProfitToInvestor)} · ROI {formatPercent(s.roi)}</div>
-            {isOver && <div style={{ marginTop: 9, background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', border: '1px solid #fde68a', color: '#92400e', padding: '7px 9px', borderRadius: 10, fontSize: 11, fontWeight: 600 }}>↗ Surplus available: {formatUGX(excessFunding)}</div>}
+            {isOver && <div style={{ marginTop: 9, background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', border: '1px solid #fde68a', color: '#92400e', padding: '7px 9px', borderRadius: 10, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>{Icon.arrowUpRight} Surplus available: {formatUGX(excessFunding)}</div>}
           </div>
         </div>
       </div>
 
       {canAddCapital && (
         <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button className="btn btn-primary" onClick={onAddCapital} style={{ boxShadow: '0 8px 20px rgba(26,92,62,0.22)' }}>+ Add contribution</button>
+          <button className="btn btn-primary" onClick={onAddCapital} style={{ boxShadow: '0 8px 20px rgba(26,92,62,0.22)' }}><span className="btn-icon">{Icon.plus}</span>Add contribution</button>
           <span className="u-text-xs u-text-muted">Investor logs capital here — Investment Partner only</span>
         </div>
       )}
@@ -123,12 +129,12 @@ export function SummarySec({ data, role, onAddCapital }) {
         {isOver
           ? <div className="card kpi-card" style={{ borderColor: '#fbbf24', background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', boxShadow: '0 4px 16px rgba(251,191,36,0.18)' }}><div className="kpi-label" style={{ color: '#92400e' }}>Surplus Funding</div><div className="kpi-value" style={{ color: '#78350f' }}>+{formatUGX(excessFunding)}</div><div className="kpi-insight" style={{ color: '#b45309', fontWeight: 700 }}>+{excessPct}% beyond 100% · fully funded</div></div>
           : isFully
-            ? <div className="card kpi-card" style={{ borderColor: '#10b981', background: 'linear-gradient(135deg, #ecfdf5, #f0fdf4)' }}><div className="kpi-label" style={{ color: '#065f46' }}>Outstanding Funding</div><div className="kpi-value" style={{ color: '#065f46' }}>{formatUGX(0)}</div><div className="kpi-insight" style={{ color: '#059669' }}>✓ 100% funded — on target</div></div>
+            ? <div className="card kpi-card" style={{ borderColor: '#10b981', background: 'linear-gradient(135deg, #ecfdf5, #f0fdf4)' }}><div className="kpi-label" style={{ color: '#065f46' }}>Outstanding Funding</div><div className="kpi-value" style={{ color: '#065f46' }}>{formatUGX(0)}</div><div className="kpi-insight icon-label" style={{ color: '#059669' }}>{Icon.checkCircle} 100% funded — on target</div></div>
             : <div className="card kpi-card"><div className="kpi-label">Outstanding Funding</div><div className="kpi-value">{formatUGX(s.outstandingFunding)}</div></div>}
       </div>
 
       <div className="card" style={{ padding: 'var(--space-5)' }}>
-        <h3 style={{ marginBottom: 'var(--space-3)' }}>Revenue allocation</h3>
+        <h3 className="icon-label" style={{ marginBottom: 'var(--space-3)' }}>{Icon.pieChart}Revenue allocation</h3>
         <p className="u-text-sm u-text-secondary" style={{ lineHeight: 1.6, marginBottom: 'var(--space-4)' }}>
           Gross sales are split: half toward feed, half as gross profit.
           A share of gross profit goes to the operating partner; the balance is net profit to the investor.
@@ -141,7 +147,7 @@ export function SummarySec({ data, role, onAddCapital }) {
       </div>
 
       <div className="card" style={{ padding: 'var(--space-5)', marginTop: 'var(--space-5)' }}>
-        <h3 style={{ marginBottom: 'var(--space-3)' }}>Egg trays — collected vs sold</h3>
+        <h3 className="icon-label" style={{ marginBottom: 'var(--space-3)' }}>{Icon.egg}Egg trays — collected vs sold</h3>
         <div className="kpi-grid">
           <div className="card kpi-card"><div className="kpi-label">Collected</div><div className="kpi-value" style={{ fontSize: 'var(--text-lg)' }}>{formatNumber(collectedTrays, 1)}</div></div>
           <div className="card kpi-card"><div className="kpi-label">Sold</div><div className="kpi-value" style={{ fontSize: 'var(--text-lg)' }}>{formatNumber(soldTrays, 1)}</div></div>
@@ -161,7 +167,7 @@ export function CapitalSec({ role, setActions, autoOpen, onConsumed, commercial 
   useEffect(() => { if (autoOpen) { setShow(true); if (onConsumed) onConsumed(); } }, [autoOpen]);
   const writable = canWrite(role, 'capital');
   useEffect(() => {
-    setActions(writable ? <button className="btn btn-primary btn-sm" onClick={() => setShow(true)}>+ Record disbursement</button>
+    setActions(writable ? <button className="btn btn-primary btn-sm" onClick={() => setShow(true)}><span className="btn-icon">{Icon.plus}</span>Record disbursement</button>
       : <span className="u-text-xs u-text-muted">Only Investment Partner / Admin can record disbursements</span>);
     return () => setActions(null);
   }, []);
@@ -185,9 +191,9 @@ export function CapitalSec({ role, setActions, autoOpen, onConsumed, commercial 
           { key: 'a', label: 'Amount', accessor: (r) => formatUGX(r.amount) },
           { key: 'p', label: 'Purpose', accessor: (r) => r.purpose || 'General' },
           { key: 'r', label: 'Reference', accessor: (r) => r.reference || '—' },
-          { key: 'doc', label: '🧾', accessor: (r) => <ReceiptThumb path={r.document_id} name={'Disbursement ' + (r.date || '')} /> },
+          { key: 'doc', label: <span className="table-th-icon">{Icon.receipt}</span>, accessor: (r) => <ReceiptThumb path={r.document_id} name={'Disbursement ' + (r.date || '')} /> },
         ]} rows={rows}
-          actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
+          actions={writable ? [{ id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
           emptyMessage="No disbursements recorded." />
       )}
@@ -235,8 +241,8 @@ function CapitalForm({ onClose, onSaved, commercial }) {
   }
   return (
     <Modal title="Record disbursement" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? label : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? label : 'Save'}</button></>}>
       <Field label="Date" type="date" required value={f.date} onChange={set('date')} />
       <Field label="Amount (UGX)" type="number" required value={f.amount} onChange={set('amount')} />
       <Field label="Purpose" type="select" value={f.purpose} onChange={set('purpose')} options={CAPITAL_PURPOSES} />
@@ -268,7 +274,7 @@ export function ExpensesSec({ role, setActions, data }) {
   const [show, setShow] = useState(false);
   const writable = canWrite(role, 'expenses');
   useEffect(() => {
-    setActions(writable ? <button className="btn btn-primary btn-sm" onClick={() => setShow(true)}>+ Record expense</button>
+    setActions(writable ? <button className="btn btn-primary btn-sm" onClick={() => setShow(true)}><span className="btn-icon">{Icon.plus}</span>Record expense</button>
       : <span className="u-text-xs u-text-muted">Only Operating Partner / Administrator can record expenses</span>);
     return () => setActions(null);
   }, []);
@@ -293,14 +299,14 @@ export function ExpensesSec({ role, setActions, data }) {
           { key: 's', label: 'Detail', accessor: (r) => r.sub_category || '—' },
           { key: 'a', label: 'Amount', accessor: (r) => formatUGX(r.amount) },
           { key: 'sup', label: 'Supplier', accessor: (r) => r.supplier || '—' },
-          { key: 'doc', label: '🧾', accessor: (r) => <ReceiptThumb path={r.document_id} name={'Expense ' + (r.date || '')} /> },
+          { key: 'doc', label: <span className="table-th-icon">{Icon.receipt}</span>, accessor: (r) => <ReceiptThumb path={r.document_id} name={'Expense ' + (r.date || '')} /> },
         ]} rows={rows}
-          actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
+          actions={writable ? [{ id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
           emptyMessage="No expenses recorded." />
       )}
       {show && <ExpenseForm onClose={() => setShow(false)} onSaved={() => { setShow(false); reload(); }} />}
-      <h3 className="u-text-sm u-font-semibold mb-3" style={{ marginTop: 'var(--space-5)' }}>Budget vs actual</h3>
+      <h3 className="u-text-sm u-font-semibold mb-3 icon-label" style={{ marginTop: 'var(--space-5)' }}>{Icon.barChart}Budget vs actual</h3>
       <BudgetSec data={data || { budget: [] }} />
     </>
   );
@@ -355,8 +361,8 @@ function ExpenseForm({ onClose, onSaved }) {
   }
   return (
     <Modal title="Record expense" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? label : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? label : 'Save'}</button></>}>
       <Field label="Date" type="date" required value={f.date} onChange={set('date')} />
       <Field label="Category" type="select" required value={f.category} onChange={set('category')} options={EXPENSE_CATEGORIES} />
       <Field label="Sub-item / description" value={f.sub_category} onChange={set('sub_category')} />

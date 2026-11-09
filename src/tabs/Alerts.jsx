@@ -3,6 +3,7 @@ import { formatDate } from '../lib/format.js';
 import { listAlerts, runEngine, visibleToRole } from '../lib/alerts.js';
 import { audit } from '../lib/audit.js';
 import { Badge, useToast } from '../components/ui.jsx';
+import { Icon } from '../components/shell.jsx';
 
 export default function Alerts({ role, setActions }) {
   const toast = useToast();
@@ -25,7 +26,7 @@ export default function Alerts({ role, setActions }) {
 
   useEffect(() => {
     setActions(canAct
-      ? <button className="btn btn-secondary btn-sm" disabled={running} onClick={run}>Run engine</button>
+      ? <button className="btn btn-secondary btn-sm" disabled={running} onClick={run}><span className="btn-icon">{Icon.refresh}</span>Run engine</button>
       : null);
     return () => setActions(null);
   }, [running]);
@@ -58,7 +59,7 @@ export default function Alerts({ role, setActions }) {
     <>
       <div className="card" style={{ padding: 14, marginBottom: 14, background: 'linear-gradient(135deg, var(--color-bg-elevated), var(--color-bg-subtle))', border: '1px solid var(--color-border)', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: critCount ? 'var(--color-critical-soft)' : 'var(--color-positive-soft)', color: critCount ? 'var(--color-critical)' : 'var(--color-positive)', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 16 }}>{critCount || '✓'}</div>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: critCount ? 'var(--color-critical-soft)' : 'var(--color-positive-soft)', color: critCount ? 'var(--color-critical)' : 'var(--color-positive)', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 16 }}>{critCount || Icon.check}</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 13 }}>Alerts Inbox</div>
             <div className="u-text-xs u-text-muted">Evaluated by the rule engine · newest first</div>
@@ -101,11 +102,11 @@ export default function Alerts({ role, setActions }) {
             </div>
             {a.status !== 'Resolved' && canAct && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {a.status === 'Open' && <button className="btn btn-secondary btn-sm" onClick={() => setStatus(a, 'Acknowledged')}>Acknowledge</button>}
-                <button className="btn btn-primary btn-sm" onClick={() => setStatus(a, 'Resolved')}>Resolve</button>
+                {a.status === 'Open' && <button className="btn btn-secondary btn-sm" onClick={() => setStatus(a, 'Acknowledged')}><span className="btn-icon">{Icon.check}</span>Acknowledge</button>}
+                <button className="btn btn-primary btn-sm" onClick={() => setStatus(a, 'Resolved')}><span className="btn-icon">{Icon.checkCircle}</span>Resolve</button>
                 <a className="btn btn-secondary btn-sm" target="_blank" rel="noreferrer"
                   href={'https://wa.me/?text=' + encodeURIComponent('LUK54 ALERT [' + a.priority + '] ' + a.title + ' — ' + (a.reason || '') + ' Action: ' + (a.suggested_action || 'see app'))}>
-                  WhatsApp
+                  <span className="btn-icon">{Icon.message}</span>WhatsApp
                 </a>
               </div>
             )}

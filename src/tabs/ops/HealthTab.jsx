@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient.js';
 import { audit } from '../../lib/audit.js';
 import { formatDate, todayEAT } from '../../lib/format.js';
 import { Badge, DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
+import { Icon } from '../../components/shell.jsx';
 
 const DEFAULT_TYPES = ['Vaccination', 'Medication', 'Treatment', 'Other'];
 const DEFAULT_PRODUCTS = ['NEWCASTLE IB', 'GUMBOLO 1', 'GUMBOLO 2', 'NEWCASTLE PLAIN', 'FOWL POX', 'DEWORMING', 'DEBEAKING', 'FOWL TYPHOID', 'NEWCASTLE LASOTA', 'GLUCOVIT', 'ASHYTL', 'LIMOVIT', 'MACROLAN', 'COCCITOLTRAZOL', 'OXYVITAMIN', 'LEVACIDE', 'DISINFECTANT'];
@@ -33,8 +34,8 @@ export default function HealthTab({ setActions, writable = true }) {
   useEffect(() => {
     setActions(
       <>
-        <button className="btn btn-secondary btn-sm" onClick={() => setEditingSched(null)}>+ Schedule item</button>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowTreatment(true)}>+ Log treatment</button>
+        <button className="btn btn-secondary btn-sm" onClick={() => setEditingSched(null)}><span className="btn-icon">{Icon.calendar}</span>Schedule item</button>
+        <button className="btn btn-primary btn-sm" onClick={() => setShowTreatment(true)}><span className="btn-icon">{Icon.pill}</span>Log treatment</button>
       </>
     );
     return () => setActions(null);
@@ -76,14 +77,14 @@ export default function HealthTab({ setActions, writable = true }) {
   for (let d = 1; d <= daysInMonth; d++) {
     const iso = ym + '-' + String(d).padStart(2, '0');
     const cls = 'cal-day' + (iso === todayIso ? ' cal-today' : plannedSet.has(iso) ? ' cal-planned' : '');
-    days.push(<div key={d} className={cls}>{d}{plannedSet.has(iso) ? ' •' : ''}</div>);
+    days.push(<div key={d} className={cls}>{d}{plannedSet.has(iso) ? <span className="cal-dot" /> : ''}</div>);
   }
 
   return (
     <>
       <div className="card pad-4 mb-4">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <h3 className="u-text-sm u-font-semibold">Calendar — {ym}</h3>
+          <h3 className="u-text-sm u-font-semibold icon-label">{Icon.calendar}Calendar — {ym}</h3>
           <span className="u-text-xs u-text-muted">Vaccination planned dates highlighted</span>
         </div>
         <div className="cal-grid">
@@ -91,7 +92,7 @@ export default function HealthTab({ setActions, writable = true }) {
           {blanks}{days}
         </div>
       </div>
-      <h3 className="u-text-sm u-font-semibold mb-3">Vaccination schedule</h3>
+      <h3 className="u-text-sm u-font-semibold mb-3 icon-label">{Icon.shield}Vaccination schedule</h3>
       <div className="mb-5">
         {loading ? <div className="skeleton" style={{ height: 100 }} /> : (
           <DataTable columns={[
@@ -104,9 +105,9 @@ export default function HealthTab({ setActions, writable = true }) {
             } },
           ]} rows={sched}
             actions={writable ? [
-              { id: 'done', label: 'Mark done' },
-              { id: 'edit', label: 'Edit' },
-              { id: 'delete', label: 'Delete', danger: true },
+              { id: 'done', label: 'Mark done', icon: Icon.check },
+              { id: 'edit', label: 'Edit', icon: Icon.edit },
+              { id: 'delete', label: 'Delete', icon: Icon.trash, danger: true },
             ] : null}
             onAction={(a, row) => {
               if (a === 'done') markDone(row);
@@ -116,7 +117,7 @@ export default function HealthTab({ setActions, writable = true }) {
             emptyMessage="No schedule. Use + Schedule item to add one." />
         )}
       </div>
-      <h3 className="u-text-sm u-font-semibold mb-3">Treatments & events</h3>
+      <h3 className="u-text-sm u-font-semibold mb-3 icon-label">{Icon.heartPulse}Treatments & events</h3>
       {loading ? <div className="skeleton" style={{ height: 120 }} /> : (
         <DataTable columns={[
           { key: 'd', label: 'Date', accessor: (r) => formatDate(r.date) },
@@ -124,7 +125,7 @@ export default function HealthTab({ setActions, writable = true }) {
           { key: 'p', label: 'Product', accessor: (r) => r.product },
           { key: 'n', label: 'Notes', accessor: (r) => r.notes || '—' },
         ]} rows={events}
-          actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
+          actions={writable ? [{ id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') onDeleteTreatment(row); }}
           emptyMessage="No treatments logged." />
       )}
@@ -166,8 +167,8 @@ function ScheduleForm({ existing, onClose, onSaved }) {
 
   return (
     <Modal title={existing ? 'Edit schedule item' : 'Add schedule item'} onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save'}</button></>}>
       <div className="form-row">
         <Field label="Week" type="number" value={f.week} onChange={set('week')} />
         <Field label="Planned date" type="date" value={f.planned_date} onChange={set('planned_date')} />
@@ -232,8 +233,8 @@ function HealthForm({ onClose, onSaved }) {
 
   return (
     <Modal title="Log treatment" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save'}</button></>}>
       <Field label="Date" type="date" required value={f.date} onChange={set('date')} />
       <Field label="Type" type="select" required value={f.type} onChange={set('type')} options={[...types, ADD_NEW]} />
       {f.type === ADD_NEW && <Field label="New type (if adding)" hint="Only fill if you chose Add new" value={f.customType} onChange={set('customType')} />}

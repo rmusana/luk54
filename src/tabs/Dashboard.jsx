@@ -42,7 +42,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
 
   useEffect(() => {
     setActions(
-      <button className="btn btn-secondary btn-sm" onClick={() => setTick((t) => t + 1)}>Refresh</button>
+      <button className="btn btn-secondary btn-sm" onClick={() => setTick((t) => t + 1)}><span className="btn-icon">{Icon.refresh}</span>Refresh</button>
     );
     return () => setActions(null);
   }, []);
@@ -181,11 +181,11 @@ export default function Dashboard({ role, onNavigate, setActions }) {
 
   return (
     <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-      <div className="pull-hint">{pulling > 60 ? 'Release to refresh ↓' : pulling > 0 ? 'Pull to refresh…' : ''}</div>
+      <div className="pull-hint">{pulling > 60 ? <span className="icon-label">{Icon.arrowDown}Release to refresh</span> : pulling > 0 ? 'Pull to refresh…' : ''}</div>
       <div className="card" style={{ padding: '10px 16px', marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', background: 'linear-gradient(135deg, var(--color-bg-elevated), var(--color-bg-subtle))', border: '1px solid var(--color-border)' }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', fontSize: 12, color: 'var(--color-text-secondary)' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-positive)', boxShadow: '0 0 0 6px var(--color-positive-soft)' }} /> LIVE
+            <span className="status-dot" style={{ background: 'var(--color-positive)', boxShadow: '0 0 0 6px var(--color-positive-soft)' }} /> LIVE
           </span>
           <span>EAT {eat}</span><span className="u-text-muted">•</span>
           <span>{summary?.eggTrend?.length ? 'Last log ' + summary.eggTrend[summary.eggTrend.length - 1].date + ' · ' + (summary.productionPercent ?? '—') + '%' : 'Last log —'}</span>
@@ -195,7 +195,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
           {missed.length > 0 && (
             <button className="btn btn-sm" style={{ background: 'var(--color-critical-soft)', color: 'var(--color-critical)', marginRight: 8 }}
               onClick={() => onNavigate('operations')}>
-              ⚠ {missed.length} day{missed.length > 1 ? 's' : ''} missed
+              <span className="icon-label">{Icon.warn} {missed.length} day{missed.length > 1 ? 's' : ''} missed</span>
             </button>
           )}
           {summary?.currentWeek ? 'Week ' + summary.currentWeek + ' · ' + (summary.commercialReached ? 'Commercial active' : 'Pre-commercial') : ''}
@@ -229,7 +229,9 @@ export default function Dashboard({ role, onNavigate, setActions }) {
               <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
                 <span className="u-text-xs" style={{ background: 'var(--color-bg-subtle)', padding: '6px 10px', borderRadius: 999 }}>Week {summary.currentWeek ?? '—'} · {formatNumber(summary.birdCount)} birds</span>
                 <span className="u-text-xs" style={{ background: summary.commercialReached ? 'var(--color-positive-soft)' : 'var(--color-bg-subtle)', color: summary.commercialReached ? 'var(--color-positive)' : 'var(--color-text-muted)', padding: '6px 10px', borderRadius: 999 }}>
-                  {summary.commercialReached ? '● Commercial active' : (summary.daysToCommercial != null ? '◷ ' + summary.daysToCommercial + ' days to commercial' : 'Building to commercial')}
+                  {summary.commercialReached
+                    ? <span className="icon-label"><span className="status-dot" />Commercial active</span>
+                    : (summary.daysToCommercial != null ? <span className="icon-label">{Icon.clock}{summary.daysToCommercial} days to commercial</span> : 'Building to commercial')}
                 </span>
               </div>
             </div>
@@ -240,7 +242,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
       {summary?.cycle && (
         <div className="card" style={{ padding: 18, marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-            <h3 style={{ margin: 0, fontSize: 14 }}>Production cycle</h3>
+            <h3 className="card-title" style={{ margin: 0, fontSize: 14 }}><span className="card-icon" style={{ width: 28, height: 28 }}>{Icon.activity}</span>Production cycle</h3>
             {summary.cycle.daysLeft < 0
               ? <Badge tone="critical">Cycle ended</Badge>
               : summary.cycle.daysLeft <= 60
@@ -260,14 +262,14 @@ export default function Dashboard({ role, onNavigate, setActions }) {
 
       <div className="grid-2" style={{ marginBottom: 18 }}>
         <div className="card" style={{ overflow: 'hidden' }}>
-          <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Egg Production Trend</h3>
+          <div className="card-header"><h3 className="card-title" style={{ margin: 0, fontSize: 14 }}><span className="card-icon" style={{ width: 28, height: 28 }}>{Icon.trendUp}</span>Egg Production Trend</h3>
             {summary && <Badge tone={summary.productionPercent != null ? (summary.productionPercent >= 88 ? 'positive' : summary.productionPercent >= 80 ? 'caution' : 'critical') : 'neutral'}>
               {summary.productionPercent != null ? summary.productionPercent + '%' : 'No data'}</Badge>}
           </div>
           <div className="card-body"><div className="chart-container" style={{ height: 240 }}><canvas ref={eggRef} /></div></div>
         </div>
         <div className="card">
-          <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Capital Flow</h3><span className="u-text-xs u-text-muted">Invested → Spent → Net</span></div>
+          <div className="card-header"><h3 className="card-title" style={{ margin: 0, fontSize: 14 }}><span className="card-icon is-info" style={{ width: 28, height: 28 }}>{Icon.wallet}</span>Capital Flow</h3><span className="u-text-xs u-text-muted">Invested → Spent → Net</span></div>
           <div className="card-body"><div className="chart-container" style={{ height: 240 }}><canvas ref={capRef} /></div></div>
         </div>
       </div>
@@ -280,7 +282,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
             <div className="kpi-value" title={it.full || it.value}>{it.value ?? '—'}</div>
             {it.trend && <div className={'kpi-trend ' + it.trend.direction}>{it.trend.direction === 'up' ? Icon.trendUp : Icon.trendDown}<span>{it.trend.label}</span></div>}
             <div className="kpi-insight">{it.insight || ''}</div>
-            {it.nav && <span className="chev">›</span>}
+            {it.nav && <span className="chev">{Icon.chevronRight}</span>}
           </div>
         )) : <div className="skeleton" style={{ height: 120 }} />}
       </div>
@@ -310,7 +312,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
 
       <div className="grid-2" style={{ marginBottom: 18 }}>
         <div className="card">
-          <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Executive Insights</h3></div>
+          <div className="card-header"><h3 className="card-title" style={{ margin: 0, fontSize: 14 }}><span className="card-icon is-caution" style={{ width: 28, height: 28 }}>{Icon.spark}</span>Executive Insights</h3></div>
           <div className="card-body">
             {!summary ? <div className="skeleton" style={{ height: 120 }} /> : insights.length ? insights.map((ins, i) => (
               <div className={'insight-card ' + (ins.severity || 'info')} style={{ marginBottom: 10 }} key={i}>
@@ -319,7 +321,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
                   <div className="insight-text">{ins.text}</div>
                   <button className="btn btn-ghost btn-sm" style={{ marginTop: 6, fontSize: 11 }}
                     onClick={() => onNavigate(ins.severity === 'critical' ? 'alerts' : 'reports')}>
-                    View {ins.severity === 'critical' ? 'alerts' : 'report'} →
+                    View {ins.severity === 'critical' ? 'alerts' : 'report'} {Icon.arrowRight}
                   </button>
                 </div>
               </div>
@@ -327,8 +329,8 @@ export default function Dashboard({ role, onNavigate, setActions }) {
           </div>
         </div>
         <div className="card">
-          <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Active Alerts</h3>
-            <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('alerts')}>View all</button></div>
+          <div className="card-header"><h3 className="card-title" style={{ margin: 0, fontSize: 14 }}><span className="card-icon is-critical" style={{ width: 28, height: 28 }}>{Icon.bell}</span>Active Alerts</h3>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('alerts')}>View all<span className="btn-icon">{Icon.arrowRight}</span></button></div>
           <div className="card-body">
             {!summary ? <div className="skeleton" style={{ height: 100 }} /> : alerts.length ? alerts.slice(0, 5).map((a, i) => {
               const badge = a.priority === 'Critical' ? 'critical' : a.priority === 'High' ? 'caution' : 'neutral';
@@ -347,7 +349,7 @@ export default function Dashboard({ role, onNavigate, setActions }) {
       </div>
 
       <div className="card" style={{ marginBottom: 18 }}>
-        <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Recent Activity</h3></div>
+        <div className="card-header"><h3 className="card-title" style={{ margin: 0, fontSize: 14 }}><span className="card-icon" style={{ width: 28, height: 28 }}>{Icon.activity}</span>Recent Activity</h3></div>
         <div className="card-body" style={{ maxHeight: 280, overflowY: 'auto' }}>
           {!summary ? <div className="skeleton" style={{ height: 100 }} /> : activity.length ? activity.map((a, i) => (
             <div style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--color-border)' }} key={i}>
@@ -365,12 +367,12 @@ export default function Dashboard({ role, onNavigate, setActions }) {
       </div>
 
       <div className="card" style={{ marginBottom: 18 }}>
-        <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Quick Actions</h3></div>
+        <div className="card-header"><h3 className="card-title" style={{ margin: 0, fontSize: 14 }}><span className="card-icon" style={{ width: 28, height: 28 }}>{Icon.spark}</span>Quick Actions</h3></div>
         <div className="card-body" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {(role === 'admin' || role === 'operating_partner') && <button className="btn btn-primary btn-sm" onClick={() => onNavigate('operations')}>Log Daily Production</button>}
-          {(role === 'admin' || role === 'investment_partner') && <button className="btn btn-primary btn-sm" onClick={() => onNavigate('finance')}>Add Capital</button>}
-          <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('ai')}>Ask AI</button>
-          <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('finance')}>Review Funding</button>
+          {(role === 'admin' || role === 'operating_partner') && <button className="btn btn-primary btn-sm" onClick={() => onNavigate('operations')}><span className="btn-icon">{Icon.clipboard}</span>Log Daily Production</button>}
+          {(role === 'admin' || role === 'investment_partner') && <button className="btn btn-primary btn-sm" onClick={() => onNavigate('finance')}><span className="btn-icon">{Icon.banknote}</span>Add Capital</button>}
+          <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('ai')}><span className="btn-icon">{Icon.spark}</span>Ask AI</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('finance')}><span className="btn-icon">{Icon.wallet}</span>Review Funding</button>
         </div>
       </div>
     </div>

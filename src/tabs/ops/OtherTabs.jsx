@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient.js';
 import { audit } from '../../lib/audit.js';
 import { formatDate, formatNumber, formatUGX, todayEAT } from '../../lib/format.js';
 import { DataTable, Field, Modal, useConfirm, useToast } from '../../components/ui.jsx';
+import { Icon } from '../../components/shell.jsx';
 
 export function MortalityTab() {
   const toast = useToast();
@@ -39,7 +40,7 @@ export function InventoryTab({ setActions, writable = true }) {
   }
   useEffect(() => { load(); }, []);
   useEffect(() => {
-    setActions(<button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Adjust stock</button>);
+    setActions(<button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}><span className="btn-icon">{Icon.plus}</span>Adjust stock</button>);
     return () => setActions(null);
   }, []);
 
@@ -74,8 +75,8 @@ function InventoryForm({ onClose, onSaved }) {
   }
   return (
     <Modal title="Adjust inventory" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save'}</button></>}>
       <Field label="Item name" required value={f.name} onChange={set('name')} />
       <Field label="Quantity" type="number" required value={f.quantity} onChange={set('quantity')} />
       <Field label="Unit" value={f.unit} onChange={set('unit')} />
@@ -98,7 +99,7 @@ export function WorkersTab({ setActions, writable = true }) {
   }
   useEffect(() => { load(); }, []);
   useEffect(() => {
-    setActions(<button className="btn btn-primary btn-sm" onClick={() => setEditing(null)}>+ Add worker</button>);
+    setActions(<button className="btn btn-primary btn-sm" onClick={() => setEditing(null)}><span className="btn-icon">{Icon.plus}</span>Add worker</button>);
     return () => setActions(null);
   }, []);
   async function onDelete(row) {
@@ -118,7 +119,7 @@ export function WorkersTab({ setActions, writable = true }) {
           { key: 'a', label: 'Advance', accessor: (r) => formatUGX(r.advance) },
           { key: 'n2', label: 'Notes', accessor: (r) => r.notes || '—' },
         ]} rows={rows}
-          actions={writable ? [{ id: 'edit', label: 'Edit' }, { id: 'delete', label: 'Delete', danger: true }] : null}
+          actions={writable ? [{ id: 'edit', label: 'Edit', icon: Icon.edit }, { id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
           onAction={(a, row) => { if (a === 'edit') setEditing(row); if (a === 'delete') onDelete(row); }}
           emptyMessage="No workers yet. Add payroll, bonus and advance here." />
       )}
@@ -151,8 +152,8 @@ function WorkerForm({ existing, onClose, onSaved }) {
   }
   return (
     <Modal title={existing ? 'Edit worker' : 'Add worker'} onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save'}</button></>}>
       <Field label="Worker name" required value={f.name} onChange={set('name')} />
       <div className="form-row">
         <Field label="Payroll (UGX)" type="number" value={f.payroll} onChange={set('payroll')} />
@@ -179,7 +180,7 @@ export function NotesTab({ setActions, writable = true }) {
   }
   useEffect(() => { load(); }, []);
   useEffect(() => {
-    setActions(<button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Add note</button>);
+    setActions(<button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}><span className="btn-icon">{Icon.plus}</span>Add note</button>);
     return () => setActions(null);
   }, []);
   async function onDelete(row) {
@@ -197,7 +198,7 @@ export function NotesTab({ setActions, writable = true }) {
           { key: 'c', label: 'Category', accessor: (r) => r.category || 'General' },
           { key: 'n', label: 'Note', accessor: (r) => r.content || '—' },
         ]} rows={rows}
-          actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
+          actions={writable ? [{ id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
           emptyMessage="No staff notes." />
       )}
@@ -221,8 +222,8 @@ function NoteForm({ onClose, onSaved }) {
   }
   return (
     <Modal title="Staff note" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save'}</button></>}>
       <Field label="Date" type="date" value={f.date} onChange={set('date')} />
       <Field label="Category" type="select" value={f.category} onChange={set('category')}
         options={['General', 'Production', 'Health', 'Feed', 'Staff', 'Other']} />

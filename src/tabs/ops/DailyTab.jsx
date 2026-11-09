@@ -5,6 +5,7 @@ import { formatDate, formatNumber, todayEAT } from '../../lib/format.js';
 import { getMissingDays } from '../../lib/gaps.js';
 import { smartInsert } from '../../lib/queue.js';
 import { DataTable, Field, Gauge, Modal, Sparkline, useConfirm, useToast } from '../../components/ui.jsx';
+import { Icon } from '../../components/shell.jsx';
 
 const TRAY = 30;
 
@@ -38,7 +39,7 @@ export default function DailyTab({ setActions, writable = true }) {
 
   useEffect(() => {
     if (!writable) { setActions(null); return () => setActions(null); }
-    setActions(<button className="btn btn-primary btn-sm" onClick={() => openForm()}>+ Log Day</button>);
+    setActions(<button className="btn btn-primary btn-sm" onClick={() => openForm()}><span className="btn-icon">{Icon.plus}</span>Log Day</button>);
     return () => setActions(null);
   }, []);
 
@@ -69,14 +70,14 @@ export default function DailyTab({ setActions, writable = true }) {
     <>
       {missing.length > 0 && rows.length > 0 && (
         <div className="card pad-4 mb-4">
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
-            📋 Coverage: {missing.length} day{missing.length > 1 ? 's' : ''} without logs
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {Icon.clipboard} Coverage: {missing.length} day{missing.length > 1 ? 's' : ''} without logs
             ({missing.length <= 12 ? missing.map(formatDate).join(' · ') : formatDate(missing[0]) + ' → ' + formatDate(missing[missing.length - 1])})
           </div>
           <div className="u-text-xs u-text-secondary" style={{ marginBottom: 8 }}>
             Log any date in any order — the table sorts itself automatically.
           </div>
-          {writable && <button className="btn btn-secondary btn-sm" onClick={() => openForm(missing[0])}>Log {formatDate(missing[0])}</button>}
+          {writable && <button className="btn btn-secondary btn-sm" onClick={() => openForm(missing[0])}><span className="btn-icon">{Icon.plus}</span>Log {formatDate(missing[0])}</button>}
         </div>
       )}
       <div className="hero">
@@ -93,7 +94,8 @@ export default function DailyTab({ setActions, writable = true }) {
       {loading ? <div className="skeleton" style={{ height: 140 }} /> : (<>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
           <button className="btn btn-secondary btn-sm" onClick={() => setSortDir(sortDir === 'desc' ? 'asc' : 'desc')}>
-            {sortDir === 'desc' ? 'Newest first ↓' : 'Oldest first ↑'}
+            <span className="btn-icon">{sortDir === 'desc' ? Icon.arrowDown : Icon.arrowUp}</span>
+            {sortDir === 'desc' ? 'Newest first' : 'Oldest first'}
           </button>
         </div>
         <DataTable
@@ -114,7 +116,7 @@ export default function DailyTab({ setActions, writable = true }) {
               : '—' },
           ]}
           rows={sortDir === 'desc' ? byDateDesc : [...byDateDesc].reverse()}
-          actions={writable ? [{ id: 'delete', label: 'Delete', danger: true }] : null}
+          actions={writable ? [{ id: 'delete', label: 'Delete', icon: Icon.trash, danger: true }] : null}
           onAction={(a, row) => { if (a === 'delete') onDelete(row); }}
           emptyMessage="No daily logs yet. Click Log Day to add one."
         />
@@ -190,8 +192,8 @@ function DailyForm({ onClose, onSaved, initialDate, existingRows }) {
 
   return (
     <Modal title="Daily production log" size="lg" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.save}</span>{busy ? 'Saving…' : 'Save'}</button></>}>
       <Field label="Date" type="date" required value={f.date} onChange={set('date')} />
       <Field label="Batch / section" type="select" value={f.section} onChange={onSectionChange}
         options={sections.map((s) => s.section_id)} />

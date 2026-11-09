@@ -3,7 +3,7 @@ import { supabase } from './lib/supabaseClient.js';
 import { ConfirmProvider, Field, ToastProvider, useToast } from './components/ui.jsx';
 import { audit, setActor } from './lib/audit.js';
 import { isOnline, onOutbox, readOutbox, startOutboxAutoSync, syncOutbox } from './lib/queue.js';
-import { MobileNav, Sidebar, Topbar } from './components/shell.jsx';
+import { Icon, MobileNav, Sidebar, Topbar } from './components/shell.jsx';
 import Finance from './tabs/Finance.jsx';
 import Dashboard from './tabs/Dashboard.jsx';
 import Operations from './tabs/Operations.jsx';
@@ -173,11 +173,7 @@ function Shell() {
                   value={auth.password} onChange={(e) => setAuth({ ...auth, password: e.target.value })} />
                 <button type="button" className="glass-eye" aria-label={showPw ? 'Hide password' : 'Show password'}
                   onClick={() => setShowPw(!showPw)}>
-                  {showPw ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="23" x2="23" y2="1" /></svg>
-                  ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                  )}
+                  {showPw ? Icon.eyeOff : Icon.eye}
                 </button>
               </div>
               <label className="glass-check">
@@ -193,7 +189,7 @@ function Shell() {
                 <span>New here? <button type="button" className="btn btn-ghost btn-sm" style={{ color: '#a7e3c3', height: 'auto', padding: '0 4px' }} onClick={() => setMode('signup')}>Create account</button></span>
               )}
             </p>
-            <p className="glass-secure">🔒 Encrypted &nbsp;•&nbsp; Role-based access</p>
+            <p className="glass-secure"><span className="icon-label" style={{ justifyContent: 'center' }}>{Icon.lock}<span>Encrypted</span></span> &nbsp;•&nbsp; Role-based access</p>
             <p className="glass-foot">Need access? Contact your administrator</p>
           </div>
         </div>
@@ -207,7 +203,7 @@ function Shell() {
         <div className="card pad-4">
           <h3>Signed in, but no role assigned</h3>
           <p className="u-text-sm u-text-secondary">Ask the Administrator to assign your role (Admin, Operating Partner or Investment Partner), then refresh.</p>
-          <button className="btn btn-secondary btn-sm" onClick={() => supabase.auth.signOut()}>Sign out</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => supabase.auth.signOut()}><span className="btn-icon">{Icon.logOut}</span>Sign out</button>
         </div>
       </main>
     );
@@ -230,7 +226,7 @@ function Shell() {
             {pending > 0 && online && <button className="btn btn-sm" style={{ marginLeft: 8, background: 'rgba(255,255,255,0.5)' }} onClick={async () => {
               const res = await syncOutbox();
               toast('success', res.synced + ' synced' + (res.failed ? ', ' + res.failed + ' failed' : ''));
-            }}>Sync now</button>}
+            }}><span className="btn-icon">{Icon.refresh}</span>Sync now</button>}
           </div>
         )}
         <div className="page-root" key={module}>

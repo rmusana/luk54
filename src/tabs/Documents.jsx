@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient.js';
 import { audit } from '../lib/audit.js';
 import { formatDate, formatNumber } from '../lib/format.js';
 import { DataTable, Field, Modal, useConfirm, useToast } from '../components/ui.jsx';
+import { Icon } from '../components/shell.jsx';
 
 const CATEGORIES = ['General', 'Receipt', 'Invoice', 'Photo', 'Production', 'Statement', 'Contract', 'Vaccination', 'Other'];
 const isImage = (mime, name) => (mime || '').startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(name || '');
@@ -45,7 +46,7 @@ export default function Documents({ role, email, setActions }) {
   useEffect(() => { load(); }, []);
 
   useEffect(() => {
-    setActions(<button className="btn btn-primary btn-sm" onClick={() => setShowUpload(true)}>Upload</button>);
+    setActions(<button className="btn btn-primary btn-sm" onClick={() => setShowUpload(true)}><span className="btn-icon">{Icon.upload}</span>Upload</button>);
     return () => setActions(null);
   }, []);
 
@@ -77,6 +78,7 @@ export default function Documents({ role, email, setActions }) {
   return (
     <>
       <div className="card" style={{ padding: 14, marginBottom: 14, background: 'linear-gradient(135deg, var(--color-bg-elevated), var(--color-bg-subtle))', border: '1px solid var(--color-border)', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="card-icon" style={{ width: 40, height: 40 }}>{Icon.image}</div>
         <div>
           <div style={{ fontWeight: 700, fontSize: 13 }}>Evidence — every UGX has a receipt</div>
           <div className="u-text-xs u-text-muted">Photos, invoices, statements. Linked to sales, expenses and disbursements.</div>
@@ -111,7 +113,7 @@ export default function Documents({ role, email, setActions }) {
             <div className="card kpi-card clickable" key={d.id} onClick={() => openPreview(d)}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <div className="act-icon" style={{ width: 44, height: 44, borderRadius: 10 }}>
-                  {d.category ? d.category[0] : '•'}
+                  {isImage(d.mime_type, d.name) ? Icon.image : Icon.fileText}
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div className="u-text-sm u-font-medium u-truncate">{d.name}</div>
@@ -129,9 +131,9 @@ export default function Documents({ role, email, setActions }) {
       {preview && (
         <Modal title={preview.name} onClose={() => { setPreview(null); setPreviewUrl(''); }}
           footer={<>
-            {previewUrl && <a className="btn btn-secondary" href={previewUrl} target="_blank" rel="noreferrer">Open / Download</a>}
-            {canDelete && <button className="btn btn-danger" onClick={() => onDelete(preview)}>Delete</button>}
-            <button className="btn btn-secondary" onClick={() => { setPreview(null); setPreviewUrl(''); }}>Close</button>
+            {previewUrl && <a className="btn btn-secondary" href={previewUrl} target="_blank" rel="noreferrer"><span className="btn-icon">{Icon.externalLink}</span>Open / Download</a>}
+            {canDelete && <button className="btn btn-danger" onClick={() => onDelete(preview)}><span className="btn-icon">{Icon.trash}</span>Delete</button>}
+            <button className="btn btn-secondary" onClick={() => { setPreview(null); setPreviewUrl(''); }}><span className="btn-icon">{Icon.x}</span>Close</button>
           </>}>
           {!previewUrl ? <div className="skeleton" style={{ height: 200 }} /> : (
             isImage(preview.mime_type, preview.name)
@@ -177,8 +179,8 @@ function UploadForm({ email, onClose, onSaved }) {
 
   return (
     <Modal title="Upload document" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Uploading…' : 'Upload'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}><span className="btn-icon">{Icon.x}</span>Cancel</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}><span className="btn-icon">{Icon.upload}</span>{busy ? 'Uploading…' : 'Upload'}</button></>}>
       <Field label="Category" type="select" value={f.category} onChange={set('category')} options={CATEGORIES} />
       <div className="form-group">
         <label className="form-label">File</label>

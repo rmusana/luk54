@@ -344,6 +344,25 @@ body { margin: 0; font-family: var(--font-sans); background: var(--color-bg); co
   .toast { max-width: none; }
 }
 
+/* ── Icon system ── */
+.ui-icon { width: 1em; height: 1em; flex-shrink: 0; vertical-align: -0.125em; }
+.btn .ui-icon { width: 16px; height: 16px; }
+.icon-label { display: inline-flex; align-items: center; gap: 6px; }
+.icon-label .ui-icon { width: 15px; height: 15px; }
+.card-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.card-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--color-accent-soft); color: var(--color-accent); display: grid; place-items: center; flex-shrink: 0; }
+.card-icon .ui-icon { width: 17px; height: 17px; }
+.card-icon.is-info { background: var(--color-info-soft); color: var(--color-info); }
+.card-icon.is-positive { background: var(--color-positive-soft); color: var(--color-positive); }
+.card-icon.is-caution { background: var(--color-caution-soft); color: var(--color-caution); }
+.card-icon.is-critical { background: var(--color-critical-soft); color: var(--color-critical); }
+.table-th-icon { display: inline-flex; align-items: center; justify-content: center; }
+.table-th-icon .ui-icon { width: 14px; height: 14px; }
+.kpi-card .chev .ui-icon { width: 100%; height: 100%; }
+.glass-eye .ui-icon { width: 18px; height: 18px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; display: inline-block; flex-shrink: 0; }
+.cal-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--color-accent); margin-left: 4px; vertical-align: middle; }
+
 /* ── Growth Rate ── */
 .badge-critical { background: var(--color-critical-soft); color: var(--color-critical); }
 .btn .btn-icon { display: inline-flex; width: 14px; height: 14px; flex-shrink: 0; }
