@@ -4,6 +4,7 @@ import { financialSummary, isCommercial } from '../lib/finance.js';
 import { useToast } from '../components/ui.jsx';
 import { CapitalSec, ExpensesSec, SummarySec } from './finance/Core.jsx';
 import { AllocationSec, CashflowSec, EquitySec, ProfitSec, RevenueSec } from './finance/Sections.jsx';
+import { GrowthRateSec } from './finance/GrowthRate.jsx';
 
 const SUBS = [
   { id: 'overview', label: 'Overview', roles: ['admin', 'operating_partner', 'investment_partner'] },
@@ -13,6 +14,7 @@ const SUBS = [
   { id: 'allocation', label: 'Revenue Allocation', roles: ['admin', 'investment_partner'] },
   { id: 'profit', label: 'Profit Distribution', roles: ['admin', 'investment_partner'] },
   { id: 'equity', label: 'Equity', roles: ['admin', 'investment_partner'] },
+  { id: 'growth', label: 'Growth Rate', roles: ['admin', 'investment_partner'] },
   { id: 'cashflow', label: 'Cash Flow', roles: ['admin', 'operating_partner', 'investment_partner'] },
 ];
 
@@ -70,6 +72,7 @@ export default function Finance({ role, setActions }) {
           {activeSub === 'allocation' && <AllocationSec role={role} data={data} setActions={setActions} />}
           {activeSub === 'profit' && <ProfitSec role={role} data={data} setActions={setActions} onChanged={load} />}
           {activeSub === 'equity' && <EquitySec role={role} setActions={setActions} />}
+          {activeSub === 'growth' && <GrowthRateSec role={role} setActions={setActions} />}
           {activeSub === 'cashflow' && <CashflowSec data={data} />}
         </div>
       )}

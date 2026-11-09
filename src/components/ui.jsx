@@ -82,7 +82,10 @@ export function DataTable({ columns, rows, actions, onAction, emptyMessage }) {
                 <td><div className="actions">
                   {actions.map((a) => (
                     <button key={a.id} className={'btn btn-sm ' + (a.danger ? 'btn-danger' : 'btn-secondary')}
-                      onClick={() => onAction(a.id, r)}>{a.label}</button>
+                      onClick={() => onAction(a.id, r)} title={a.label} aria-label={a.label}>
+                      {a.icon && <span className="btn-icon">{a.icon}</span>}
+                      {a.label}
+                    </button>
                   ))}
                 </div></td>
               )}
