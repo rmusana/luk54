@@ -262,15 +262,6 @@ export function GrowthRateSec({ role, setActions }) {
     return map;
   }, {}), [entries]);
 
-  const maxCumulativeByBlock = useMemo(() => {
-    const map = {};
-    blocks.forEach((block) => {
-      const series = seriesByBlock[block.id] || [];
-      map[block.id] = series.reduce((max, row) => Math.max(max, Math.abs(row.cumulativePct || 0)), 1);
-    });
-    return map;
-  }, [blocks, seriesByBlock]);
-
   const displayEntries = useMemo(() => {
     const rows = activeBlock === 'all' ? allSeries : allSeries.filter((row) => row.block_id === activeBlock);
     return [...rows].sort((a, b) => {
@@ -496,60 +487,6 @@ export function GrowthRateSec({ role, setActions }) {
     if (saved && saved.id) setSelectedBlock(saved.id);
   }
 
-  const dailyColumns = [
-    { key: 'date', label: 'Date', accessor: (row) => formatDate(row.date) },
-    {
-      key: 'block',
-      label: 'Block',
-      accessor: (row) => (
-        <span className="growth-block-tag">
-          <span className="growth-block-dot" style={{ background: row.blockColor }} />
-          {row.blockName}
-        </span>
-      ),
-    },
-    { key: 'trays', label: 'Production', accessor: (row) => <span>{formatNumber(row.production_trays, 1)} <span className="u-text-muted">trays</span></span> },
-    { key: 'unbundled', label: 'Unbundled', accessor: (row) => <span>{formatNumber(row.unbundled_eggs)} <span className="u-text-muted">eggs</span></span> },
-    { key: 'total', label: 'Total eggs', accessor: (row) => <span className="growth-strong">{formatNumber(row.total)}</span> },
-    { key: 'change', label: 'Egg change', accessor: (row) => <span className={pctClass(row.eggDelta)}>{signedEggs(row.eggDelta)}</span> },
-    {
-      key: 'daily',
-      label: 'Daily %',
-      accessor: (row) => (
-        <span className={'growth-badge ' + pctClass(row.dailyPct)}>
-          {trendIcon(row.dailyPct)}
-          {row.dailyPct == null ? '—' : signedPct(row.dailyPct)}
-        </span>
-      ),
-    },
-    {
-      key: 'cumulative',
-      label: 'Progression',
-      accessor: (row) => {
-        if (row.cumulativePct == null) return <span className="growth-flat">Baseline</span>;
-        const max = maxCumulativeByBlock[row.block_id] || 1;
-        const width = row.cumulativePct === 0 ? 0 : Math.max(3, Math.min(100, (Math.abs(row.cumulativePct) / max) * 100));
-        return (
-          <span className="growth-meter-wrap">
-            <span className="growth-meter">
-              <span className={'growth-meter-fill' + (row.cumulativePct < 0 ? ' negative' : '')} style={{ width: width + '%' }} />
-            </span>
-            <span className={pctClass(row.cumulativePct)}>{signedPct(row.cumulativePct)}</span>
-          </span>
-        );
-      },
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      accessor: (row) => (
-        <Badge tone={trendTone(row.dailyPct)}>
-          <span className="growth-badge">{trendIcon(row.dailyPct)}{trendLabel(row.dailyPct)}</span>
-        </Badge>
-      ),
-    },
-  ];
-
   const weeklyColumns = [
     { key: 'week', label: 'Week', accessor: (row) => <span className="growth-strong">{row.weekLabel}</span> },
     {
@@ -756,19 +693,47 @@ export function GrowthRateSec({ role, setActions }) {
           </div>
           <Badge tone="neutral">{displayEntries.length} {displayEntries.length === 1 ? 'entry' : 'entries'}</Badge>
         </div>
-        <DataTable
-          columns={dailyColumns}
-          rows={displayEntries}
-          actions={writable ? [
-            { id: 'edit', label: 'Edit', icon: Icon.edit },
-            { id: 'delete', label: 'Delete', danger: true, icon: Icon.trash },
-          ] : null}
-          onAction={(action, row) => {
-            if (action === 'edit') setEntryForm({ open: true, entry: row });
-            if (action === 'delete') handleDeleteEntry(row);
-          }}
-          emptyMessage="No growth entries yet. Add the first daily reading."
-        />
+        <div className="card-body">
+          {displayEntries.length === 0 ? (
+            <EmptyState title="No growth entries yet" desc="Add the first daily reading to see daily movement." />
+          ) : (
+            <div className="growth-readings-grid">
+              {displayEntries.map((row) => (
+                <div key={row.id} className="growth-reading-card">
+                  <div className="growth-reading-header">
+                    <span className="growth-reading-date">{formatDate(row.date)}</span>
+                    <span className="growth-reading-block">
+                      <span className="growth-block-dot" style={{ background: row.blockColor }} />
+                      {row.blockName}
+                    </span>
+                  </div>
+                  <div className="growth-reading-total">{formatNumber(row.total)}</div>
+                  <div className="growth-reading-meta">
+                    <span>{formatNumber(row.production_trays, 1)} <span className="u-text-muted">trays</span></span>
+                    <span>{formatNumber(row.unbundled_eggs)} <span className="u-text-muted">unbundled</span></span>
+                    <span className={pctClass(row.eggDelta)}>{signedEggs(row.eggDelta)}</span>
+                  </div>
+                  <div className="growth-reading-badges">
+                    <span className={'growth-badge ' + pctClass(row.dailyPct)}>
+                      {trendIcon(row.dailyPct)} {row.dailyPct == null ? '—' : signedPct(row.dailyPct)}
+                    </span>
+                    <span className={pctClass(row.cumulativePct)}>{row.cumulativePct == null ? 'Baseline' : signedPct(row.cumulativePct)}</span>
+                  </div>
+                  {writable && (
+                    <div className="growth-reading-actions">
+                      <button className="btn btn-ghost btn-sm" onClick={() => setEntryForm({ open: true, entry: row })} title="Edit entry">
+                        <span className="btn-icon">{Icon.edit}</span>
+                      </button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => handleDeleteEntry(row)} title="Delete entry" style={{ color: 'var(--color-critical)' }}>
+                        <span className="btn-icon">{Icon.trash}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="card growth-table-card">
