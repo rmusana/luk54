@@ -129,8 +129,6 @@ function buildWeekly(series, block) {
     const netPct = pctChange(closing, opening);
     const wowPct = previousClosing != null ? pctChange(closing, previousClosing) : null;
     const daily = sorted.map((row) => row.dailyPct).filter((value) => value != null);
-    const positivePct = daily.filter((value) => value > 0).reduce((sum, value) => sum + value, 0);
-    const negativePct = daily.filter((value) => value < 0).reduce((sum, value) => sum + value, 0);
     const incrementDays = daily.filter((value) => value > 0).length;
     const decrementDays = daily.filter((value) => value < 0).length;
     let status = 'flat';
@@ -151,11 +149,6 @@ function buildWeekly(series, block) {
       netEggs,
       netPct,
       wowPct,
-      positivePct,
-      negativePct,
-      incrementDays,
-      decrementDays,
-      entryCount: sorted.length,
       status,
     };
     previousClosing = closing;
@@ -527,13 +520,8 @@ export function GrowthRateSec({ role, setActions }) {
     },
     { key: 'opening', label: 'Opening', accessor: (row) => formatNumber(row.opening) },
     { key: 'closing', label: 'Closing', accessor: (row) => <span className="growth-strong">{formatNumber(row.closing)}</span> },
-    { key: 'netEggs', label: 'Net change', accessor: (row) => <span className={pctClass(row.netEggs)}>{signedEggs(row.netEggs)}</span> },
     { key: 'netPct', label: 'Week net', accessor: (row) => <span className={pctClass(row.netPct)}>{signedPct(row.netPct)}</span> },
     { key: 'wow', label: 'Week over week', accessor: (row) => <span className={pctClass(row.wowPct)}>{signedPct(row.wowPct)}</span> },
-    { key: 'positive', label: '+ Daily %', accessor: (row) => <span className={row.positivePct ? 'growth-up' : 'growth-flat'}>{row.positivePct ? signedPct(row.positivePct) : '—'}</span> },
-    { key: 'negative', label: '− Daily %', accessor: (row) => <span className={row.negativePct ? 'growth-down' : 'growth-flat'}>{row.negativePct ? signedPct(row.negativePct) : '—'}</span> },
-    { key: 'inc', label: 'Inc. days', accessor: (row) => <span className={row.incrementDays ? 'growth-up' : 'growth-flat'}>{row.incrementDays}</span> },
-    { key: 'dec', label: 'Dec. days', accessor: (row) => <span className={row.decrementDays ? 'growth-down' : 'growth-flat'}>{row.decrementDays}</span> },
     {
       key: 'status',
       label: 'Status',
