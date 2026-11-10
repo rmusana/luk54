@@ -384,12 +384,13 @@ export function ProductionTrackingSec({ role, setActions }) {
     const scales = {
       y: {
         beginAtZero: true,
-        title: { display: true, text: 'Trays' },
+        title: { display: true, text: 'Production in trays' },
         grid: { color: css('--color-border') || '#26332e' },
         ticks: { precision: 0 },
       },
       x: {
         grid: { display: false },
+        title: { display: true, text: 'Date' },
         ticks: {
           maxRotation: 0,
           autoSkip: true,
