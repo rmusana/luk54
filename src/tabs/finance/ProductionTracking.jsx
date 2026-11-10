@@ -11,6 +11,12 @@ Chart.register(...registerables);
 
 const PROJECT = 'LUK54';
 const READINGS_PER_PAGE = 10;
+const SPARK_RANGES = [
+  { value: 7, label: '7D' },
+  { value: 30, label: '30D' },
+  { value: 90, label: '90D' },
+  { value: 'all', label: 'All' },
+];
 const BLOCK_COLORS = ['#1a7a45', '#2563eb', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#65a30d', '#db2777'];
 
 const n = (value) => {
@@ -22,6 +28,9 @@ const dateKey = (value) => {
   if (value instanceof Date) return value.toISOString().slice(0, 10);
   return String(value || '').slice(0, 10);
 };
+
+const monthShort = (value) => new Date(value + 'T00:00:00Z')
+  .toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
 
 const totalEggs = (row) => n(row.production_trays) * 30 + n(row.unbundled_eggs);
 
@@ -51,6 +60,50 @@ const pctClass = (value) => {
   if (value == null) return 'growth-flat';
   return value > 0 ? 'growth-up' : value < 0 ? 'growth-down' : 'growth-flat';
 };
+
+function BlockSparkline({ dates, values, color, max }) {
+  if (!dates.length) return null;
+  const width = 200;
+  const height = 40;
+  const pad = 3;
+  const usable = height - pad * 2;
+  const xFor = (index) => (dates.length === 1 ? width / 2 : (index / (dates.length - 1)) * width);
+  const yFor = (value) => height - pad - (max > 0 ? (value / max) * usable : 0);
+  let path = '';
+  let drawing = false;
+  let lastIndex = -1;
+  let lastValue = null;
+  dates.forEach((date, index) => {
+    const value = values[date];
+    if (value == null) {
+      drawing = false;
+      return;
+    }
+    const x = xFor(index);
+    const y = yFor(value);
+    path += (drawing ? ' L ' : ' M ') + x.toFixed(1) + ' ' + y.toFixed(1);
+    drawing = true;
+    lastIndex = index;
+    lastValue = value;
+  });
+  return (
+    <svg className="growth-spark" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label="Daily production sparkline">
+      <line x1="0" y1={height - pad} x2={width} y2={height - pad} className="growth-spark-base" />
+      {path && (
+        <path
+          d={path}
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )}
+      {lastIndex >= 0 && <circle cx={xFor(lastIndex)} cy={yFor(lastValue)} r="2.5" fill={color} />}
+    </svg>
+  );
+}
 
 function addDays(dateStr, days) {
   const d = new Date(dateStr + 'T00:00:00Z');
@@ -171,11 +224,14 @@ export function ProductionTrackingSec({ role, setActions }) {
   const [setupError, setSetupError] = useState('');
   const [selectedBlock, setSelectedBlock] = useState('all');
   const [readingPage, setReadingPage] = useState(1);
+  const [sparkRange, setSparkRange] = useState(30);
   const [entryForm, setEntryForm] = useState({ open: false, entry: null });
   const [blockForm, setBlockForm] = useState({ open: false, block: null });
   const [blockManagerOpen, setBlockManagerOpen] = useState(false);
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
+  const mixChartRef = useRef(null);
+  const mixChartInstance = useRef(null);
 
   async function load() {
     setLoading(true);
@@ -275,6 +331,48 @@ export function ProductionTrackingSec({ role, setActions }) {
     currentReadingPage * READINGS_PER_PAGE
   );
 
+  const sparkData = useMemo(() => {
+    const lastDate = allSeries.reduce((latest, row) => (!latest || row.date > latest ? row.date : latest), '');
+    const cutoff = sparkRange === 'all' || !lastDate ? '' : addDays(lastDate, -(sparkRange - 1));
+    const dateSet = new Set();
+    allSeries.forEach((row) => {
+      if (!cutoff || row.date >= cutoff) dateSet.add(row.date);
+    });
+    const dates = [...dateSet].sort();
+    let max = 0;
+    const blockData = blocks.map((block) => {
+      const series = (seriesByBlock[block.id] || []).filter((row) => !cutoff || row.date >= cutoff);
+      const values = {};
+      series.forEach((row) => {
+        const value = trays(row.total);
+        values[row.date] = value;
+        if (value > max) max = value;
+      });
+      return { block, values, latest: series.length ? series[series.length - 1] : null };
+    });
+    return { dates, max, blockData };
+  }, [allSeries, blocks, seriesByBlock, sparkRange]);
+
+  const heatData = useMemo(() => {
+    const rows = activeBlock === 'all' ? allSeries : allSeries.filter((row) => row.block_id === activeBlock);
+    if (!rows.length) return null;
+    const lastDate = rows.reduce((latest, row) => (!latest || row.date > latest ? row.date : latest), '');
+    const start = weekStartKey(addDays(lastDate, -83));
+    const byDate = new Map();
+    rows.forEach((row) => byDate.set(row.date, (byDate.get(row.date) || 0) + row.total));
+    const days = [];
+    let max = 0;
+    for (let i = 0; i < 84; i += 1) {
+      const date = addDays(start, i);
+      const value = byDate.has(date) ? byDate.get(date) : null;
+      if (value != null && value > max) max = value;
+      days.push({ date, value });
+    }
+    const weeks = [];
+    for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
+    return { weeks, max, lastDate };
+  }, [allSeries, activeBlock]);
+
   const weeklyRows = useMemo(() => {
     const rows = blocks.flatMap((block) => buildWeekly(seriesByBlock[block.id] || [], { ...block, color: colorByBlock[block.id] }));
     const filtered = activeBlock === 'all' ? rows : rows.filter((row) => row.blockId === activeBlock);
@@ -303,6 +401,7 @@ export function ProductionTrackingSec({ role, setActions }) {
   const chartHasData = activeBlock === 'all'
     ? blocks.some((block) => (seriesByBlock[block.id] || []).length > 0)
     : (seriesByBlock[activeBlock] || []).length > 0;
+  const mixHasData = blocks.some((block) => (seriesByBlock[block.id] || []).length > 0);
 
   useEffect(() => {
     if (chartInstance.current) {
@@ -422,6 +521,97 @@ export function ProductionTrackingSec({ role, setActions }) {
       }
     };
   }, [loading, setupError, chartHasData, activeBlock, blocks, entries, seriesByBlock, colorByBlock]);
+
+  useEffect(() => {
+    if (mixChartInstance.current) {
+      mixChartInstance.current.destroy();
+      mixChartInstance.current = null;
+    }
+    if (loading || setupError || !mixHasData) return;
+    const canvas = mixChartRef.current;
+    if (!canvas) return;
+    const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    Chart.defaults.color = css('--color-text-secondary') || '#a9b6b0';
+    Chart.defaults.borderColor = css('--color-border') || '#26332e';
+    const ctx = canvas.getContext('2d');
+    const dateSet = new Set();
+    blocks.forEach((block) => (seriesByBlock[block.id] || []).forEach((row) => dateSet.add(row.date)));
+    const labels = [...dateSet].sort();
+    const datasets = blocks.filter((block) => (seriesByBlock[block.id] || []).length).map((block) => {
+      const byDate = new Map((seriesByBlock[block.id] || []).map((row) => [row.date, row]));
+      return {
+        label: block.name,
+        data: labels.map((date) => {
+          const row = byDate.get(date);
+          return row ? trays(row.total) : 0;
+        }),
+        borderColor: colorByBlock[block.id],
+        backgroundColor: colorByBlock[block.id] + '99',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderWidth: 1.5,
+      };
+    });
+    mixChartInstance.current = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            align: 'end',
+            labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 16 },
+          },
+          tooltip: {
+            backgroundColor: css('--color-bg-elevated') || '#18201d',
+            titleColor: css('--color-text') || '#eef3f0',
+            bodyColor: css('--color-text-secondary') || '#a9b6b0',
+            borderColor: css('--color-border') || '#26332e',
+            borderWidth: 1,
+            padding: 12,
+            callbacks: {
+              title: (items) => (items.length ? formatDate(labels[items[0].dataIndex]) : ''),
+              label: (item) => item.dataset.label + ': ' + formatNumber(item.parsed.y, 1) + ' trays',
+              footer: (items) => 'Total: ' + formatNumber(items.reduce((sum, item) => sum + (item.parsed.y || 0), 0), 1) + ' trays',
+            },
+          },
+        },
+        scales: {
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            title: { display: true, text: 'Production in trays' },
+            grid: { color: css('--color-border') || '#26332e' },
+            ticks: { precision: 1 },
+          },
+          x: {
+            grid: { display: false },
+            title: { display: true, text: 'Date' },
+            ticks: {
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 10,
+              callback: function (value) {
+                return formatDate(this.getLabelForValue(value)).replace(/ \d{4}$/, '');
+              },
+            },
+          },
+        },
+      },
+    });
+    return () => {
+      if (mixChartInstance.current) {
+        mixChartInstance.current.destroy();
+        mixChartInstance.current = null;
+      }
+    };
+  }, [loading, setupError, mixHasData, blocks, seriesByBlock, colorByBlock]);
 
   async function handleDeleteEntry(row) {
     const ok = await confirm({
@@ -628,6 +818,144 @@ export function ProductionTrackingSec({ role, setActions }) {
             </div>
           ) : (
             <EmptyState title="No chart data yet" desc="Add a daily reading to see the production trend." />
+          )}
+        </div>
+      </div>
+
+      <div className="growth-visual-grid mb-4">
+        <div className="card growth-spark-card">
+          <div className="card-header">
+            <div className="growth-card-title">
+              <span className="growth-card-icon">{Icon.layers}</span>
+              <div>
+                <h3>Block trends</h3>
+                <p>Daily trays per block on a shared scale.</p>
+              </div>
+            </div>
+            <div className="growth-range" role="group" aria-label="Block trend range">
+              {SPARK_RANGES.map((range) => (
+                <button
+                  key={range.label}
+                  type="button"
+                  className={'growth-range-btn' + (sparkRange === range.value ? ' active' : '')}
+                  onClick={() => setSparkRange(range.value)}
+                >
+                  {range.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="card-body">
+            {sparkData.dates.length === 0 ? (
+              <EmptyState title="No block data yet" desc="Add a reading to see per-block trends." />
+            ) : (
+              <div className="growth-spark-grid">
+                {sparkData.blockData.map(({ block, values, latest }) => {
+                  const color = colorByBlock[block.id];
+                  return (
+                    <button
+                      key={block.id}
+                      type="button"
+                      className={'growth-spark-tile' + (activeBlock === block.id ? ' active' : '')}
+                      onClick={() => setSelectedBlock(activeBlock === block.id ? 'all' : block.id)}
+                      title={'View ' + block.name}
+                    >
+                      <div className="growth-spark-head">
+                        <span className="growth-spark-name">
+                          <span className="growth-block-dot" style={{ background: color }} />
+                          {block.name}
+                        </span>
+                        <span className="growth-spark-value">
+                          {latest ? formatTrays(latest.total) : '—'} <span>trays</span>
+                        </span>
+                      </div>
+                      {latest ? (
+                        <BlockSparkline dates={sparkData.dates} values={values} color={color} max={sparkData.max} />
+                      ) : (
+                        <div className="growth-spark-empty">No readings</div>
+                      )}
+                      <div className="growth-spark-foot">
+                        <span className={pctClass(latest && latest.dailyPct)}>
+                          {latest && latest.dailyPct != null ? signedPct(latest.dailyPct) : '—'}
+                        </span>
+                        <span>{sparkData.dates.length} days</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="card growth-heat-card">
+          <div className="card-header">
+            <div className="growth-card-title">
+              <span className="growth-card-icon">{Icon.calendar}</span>
+              <div>
+                <h3>Production calendar</h3>
+                <p>{activeBlock === 'all' ? 'Daily trays across all blocks, last 12 weeks.' : 'Daily trays for the selected block, last 12 weeks.'}</p>
+              </div>
+            </div>
+          </div>
+          <div className="card-body">
+            {!heatData ? (
+              <EmptyState title="No calendar data yet" desc="Daily readings appear here as a heatmap." />
+            ) : (
+              <div className="growth-heat">
+                <div className="growth-heat-months">
+                  {heatData.weeks.map((week, index) => {
+                    const first = week[0];
+                    const previous = index > 0 ? heatData.weeks[index - 1][0] : null;
+                    const showMonth = !previous || first.date.slice(0, 7) !== previous.date.slice(0, 7);
+                    return <span key={first.date} className="growth-heat-month">{showMonth ? monthShort(first.date) : ''}</span>;
+                  })}
+                </div>
+                <div className="growth-heat-body">
+                  <div className="growth-heat-days">
+                    {['Mon', '', 'Wed', '', 'Fri', '', 'Sun'].map((label, index) => <span key={index}>{label}</span>)}
+                  </div>
+                  <div className="growth-heat-grid">
+                    {heatData.weeks.flatMap((week) => week.map((day) => {
+                      const level = day.value == null ? 0 : Math.max(1, Math.min(4, Math.ceil((day.value / (heatData.max || 1)) * 4)));
+                      return (
+                        <span
+                          key={day.date}
+                          className={'growth-heat-cell growth-heat-' + level}
+                          title={formatDate(day.date) + ' · ' + (day.value == null ? 'no reading' : formatTrays(day.value) + ' trays')}
+                        />
+                      );
+                    }))}
+                  </div>
+                </div>
+                <div className="growth-heat-legend">
+                  <span>Less</span>
+                  {[0, 1, 2, 3, 4].map((level) => <span key={level} className={'growth-heat-cell growth-heat-' + level} />)}
+                  <span>More</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="card growth-chart-card mb-4">
+        <div className="card-header">
+          <div className="growth-card-title">
+            <span className="growth-card-icon">{Icon.layers}</span>
+            <div>
+              <h3>Production mix</h3>
+              <p>Total daily production and each block's share over time.</p>
+            </div>
+          </div>
+        </div>
+        <div className="card-body">
+          {mixHasData ? (
+            <div className="chart-container" style={{ height: 300 }}>
+              <canvas ref={mixChartRef} />
+            </div>
+          ) : (
+            <EmptyState title="No mix data yet" desc="Add daily readings to see the production mix." />
           )}
         </div>
       </div>
