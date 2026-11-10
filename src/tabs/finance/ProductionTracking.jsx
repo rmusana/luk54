@@ -86,22 +86,18 @@ function weekLabel(startKey) {
 
 function buildSeries(rows) {
   const sorted = [...rows].sort((a, b) => dateKey(a.date).localeCompare(dateKey(b.date)));
-  let firstTotal = null;
   let previousTotal = null;
   return sorted.map((row) => {
     const total = totalEggs(row);
     const hasPrevious = previousTotal != null;
     const eggDelta = hasPrevious ? total - previousTotal : null;
     const dailyPct = hasPrevious ? pctChange(total, previousTotal) : null;
-    const cumulativePct = firstTotal != null ? pctChange(total, firstTotal) : null;
-    if (firstTotal == null) firstTotal = total;
     const result = {
       ...row,
       date: dateKey(row.date),
       total,
       eggDelta,
       dailyPct,
-      cumulativePct,
       hasPrevious,
       isDecrement: dailyPct != null && dailyPct < 0,
       isIncrement: dailyPct != null && dailyPct > 0,
@@ -351,7 +347,6 @@ export function ProductionTrackingSec({ role, setActions }) {
       const series = seriesByBlock[activeBlock] || [];
       labels = series.map((row) => row.date);
       const accent = css('--color-accent') || '#45c58a';
-      const info = css('--color-info') || '#6ba3e8';
       const gradient = ctx.createLinearGradient(0, 0, 0, 280);
       gradient.addColorStop(0, accent + '26');
       gradient.addColorStop(1, accent + '00');
@@ -367,17 +362,6 @@ export function ProductionTrackingSec({ role, setActions }) {
           pointHoverRadius: 5,
           borderWidth: 2,
           yAxisID: 'y',
-        },
-        {
-          label: 'Cumulative growth',
-          data: series.map((row) => row.cumulativePct),
-          borderColor: info,
-          borderDash: [5, 4],
-          fill: false,
-          tension: 0.32,
-          pointRadius: 0,
-          borderWidth: 1.5,
-          yAxisID: 'y1',
         },
       ];
     }
@@ -401,15 +385,6 @@ export function ProductionTrackingSec({ role, setActions }) {
         },
       },
     };
-    if (activeBlock !== 'all') {
-      scales.y1 = {
-        position: 'right',
-        beginAtZero: false,
-        grid: { drawOnChartArea: false },
-        title: { display: true, text: 'Cumulative %' },
-        ticks: { callback: (value) => value + '%' },
-      };
-    }
     chartInstance.current = new Chart(ctx, {
       type: 'line',
       data: { labels, datasets },
@@ -434,9 +409,6 @@ export function ProductionTrackingSec({ role, setActions }) {
             callbacks: {
               title: (items) => (items.length ? formatDate(labels[items[0].dataIndex]) : ''),
               label: (item) => {
-                if (item.dataset.yAxisID === 'y1') {
-                  return item.dataset.label + ': ' + (item.parsed.y == null ? '—' : signedPct(item.parsed.y));
-                }
                 return item.dataset.label + ': ' + (item.parsed.y == null ? '—' : formatNumber(item.parsed.y, 1) + ' trays');
               },
             },
@@ -647,10 +619,9 @@ export function ProductionTrackingSec({ role, setActions }) {
             <span className="growth-card-icon">{Icon.activity}</span>
             <div>
               <h3>Production Trend</h3>
-              <p>{activeBlock === 'all' ? 'Trays by block across recorded days.' : 'Trays and cumulative growth from the first reading.'}</p>
+              <p>{activeBlock === 'all' ? 'Trays by block across recorded days.' : 'Trays from the first reading.'}</p>
             </div>
           </div>
-          {activeBlock !== 'all' && <Badge tone="info">Cumulative from baseline</Badge>}
         </div>
         <div className="card-body">
           {chartHasData ? (
@@ -697,7 +668,6 @@ export function ProductionTrackingSec({ role, setActions }) {
                     <span className={'growth-badge ' + pctClass(row.dailyPct)}>
                       {trendIcon(row.dailyPct)} {row.dailyPct == null ? '—' : signedPct(row.dailyPct)}
                     </span>
-                    <span className={pctClass(row.cumulativePct)}>{row.cumulativePct == null ? 'Baseline' : signedPct(row.cumulativePct)}</span>
                   </div>
                   {writable && (
                     <div className="growth-reading-actions">
