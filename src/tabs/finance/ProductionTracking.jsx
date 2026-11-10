@@ -10,6 +10,7 @@ import { Icon } from '../../components/shell.jsx';
 Chart.register(...registerables);
 
 const PROJECT = 'LUK54';
+const READINGS_PER_PAGE = 10;
 const BLOCK_COLORS = ['#1a7a45', '#2563eb', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#65a30d', '#db2777'];
 
 const n = (value) => {
@@ -49,21 +50,6 @@ const signedTrays = (eggs) => {
 const pctClass = (value) => {
   if (value == null) return 'growth-flat';
   return value > 0 ? 'growth-up' : value < 0 ? 'growth-down' : 'growth-flat';
-};
-
-const trendIcon = (value) => {
-  if (value == null) return Icon.minus;
-  return value > 0 ? Icon.trendUp : value < 0 ? Icon.trendDown : Icon.minus;
-};
-
-const trendTone = (value) => {
-  if (value == null) return 'neutral';
-  return value > 0 ? 'positive' : value < 0 ? 'critical' : 'neutral';
-};
-
-const trendLabel = (value) => {
-  if (value == null) return 'Baseline';
-  return value > 0 ? 'Increment' : value < 0 ? 'Decrement' : 'Flat';
 };
 
 function addDays(dateStr, days) {
@@ -184,6 +170,7 @@ export function ProductionTrackingSec({ role, setActions }) {
   const [loading, setLoading] = useState(true);
   const [setupError, setSetupError] = useState('');
   const [selectedBlock, setSelectedBlock] = useState('all');
+  const [readingPage, setReadingPage] = useState(1);
   const [entryForm, setEntryForm] = useState({ open: false, entry: null });
   const [blockForm, setBlockForm] = useState({ open: false, block: null });
   const [blockManagerOpen, setBlockManagerOpen] = useState(false);
@@ -276,6 +263,17 @@ export function ProductionTrackingSec({ role, setActions }) {
       return (a.blockSort || 0) - (b.blockSort || 0);
     });
   }, [allSeries, activeBlock]);
+
+  useEffect(() => {
+    setReadingPage(1);
+  }, [activeBlock]);
+
+  const readingPageCount = Math.max(1, Math.ceil(displayEntries.length / READINGS_PER_PAGE));
+  const currentReadingPage = Math.min(readingPage, readingPageCount);
+  const pagedEntries = displayEntries.slice(
+    (currentReadingPage - 1) * READINGS_PER_PAGE,
+    currentReadingPage * READINGS_PER_PAGE
+  );
 
   const weeklyRows = useMemo(() => {
     const rows = blocks.flatMap((block) => buildWeekly(seriesByBlock[block.id] || [], { ...block, color: colorByBlock[block.id] }));
@@ -649,40 +647,64 @@ export function ProductionTrackingSec({ role, setActions }) {
           {displayEntries.length === 0 ? (
             <EmptyState title="No production entries yet" desc="Add the first daily reading to see daily movement." />
           ) : (
-            <div className="growth-readings-grid">
-              {displayEntries.map((row) => {
-                return (
-                <div key={row.id} className="growth-reading-card">
-                  <div className="growth-reading-header">
-                    <span className="growth-reading-date">{formatDate(row.date)}</span>
-                    <span className="growth-reading-block">
-                      <span className="growth-block-dot" style={{ background: row.blockColor }} />
-                      {row.blockName}
-                    </span>
-                  </div>
-                  <div className="growth-reading-total">{formatTrays(row.total)}<span className="growth-reading-unit">trays</span></div>
-                  <div className="growth-reading-meta">
-                    <span className={pctClass(row.eggDelta)}>{signedTrays(row.eggDelta)} <span className="u-text-muted">trays</span></span>
-                  </div>
-                  <div className="growth-reading-badges">
-                    <span className={'growth-badge ' + pctClass(row.dailyPct)}>
-                      {trendIcon(row.dailyPct)} {row.dailyPct == null ? '—' : signedPct(row.dailyPct)}
-                    </span>
-                  </div>
-                  {writable && (
-                    <div className="growth-reading-actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => setEntryForm({ open: true, entry: row })} title="Edit entry">
-                        <span className="btn-icon">{Icon.edit}</span>
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleDeleteEntry(row)} title="Delete entry" style={{ color: 'var(--color-critical)' }}>
-                        <span className="btn-icon">{Icon.trash}</span>
-                      </button>
-                    </div>
-                  )}
+            <>
+              <div className="table-wrap">
+                <table className="data-table growth-readings-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Block</th>
+                      <th>Production</th>
+                      <th>Change</th>
+                      {writable && <th />}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pagedEntries.map((row) => (
+                      <tr key={row.id}>
+                        <td>{formatDate(row.date)}</td>
+                        <td>
+                          <span className="growth-reading-block">
+                            <span className="growth-block-dot" style={{ background: row.blockColor }} />
+                            {row.blockName}
+                          </span>
+                        </td>
+                        <td><strong>{formatTrays(row.total)}</strong> <span className="u-text-muted">trays</span></td>
+                        <td>
+                          <span className={pctClass(row.dailyPct)}>
+                            {signedTrays(row.eggDelta)} <span className="u-text-muted">trays</span>
+                            {' · '}
+                            {row.dailyPct == null ? '—' : signedPct(row.dailyPct)}
+                          </span>
+                        </td>
+                        {writable && (
+                          <td>
+                            <div className="actions">
+                              <button className="btn btn-ghost btn-sm" onClick={() => setEntryForm({ open: true, entry: row })} title="Edit entry">
+                                <span className="btn-icon">{Icon.edit}</span>
+                              </button>
+                              <button className="btn btn-ghost btn-sm" onClick={() => handleDeleteEntry(row)} title="Delete entry" style={{ color: 'var(--color-critical)' }}>
+                                <span className="btn-icon">{Icon.trash}</span>
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="growth-pager">
+                <span className="growth-pager-info">
+                  Showing {(currentReadingPage - 1) * READINGS_PER_PAGE + 1}–{Math.min(currentReadingPage * READINGS_PER_PAGE, displayEntries.length)} of {displayEntries.length}
+                </span>
+                <div className="growth-pager-actions">
+                  <button className="btn btn-secondary btn-sm" disabled={currentReadingPage <= 1} onClick={() => setReadingPage(currentReadingPage - 1)}>Previous</button>
+                  <span className="growth-pager-page">Page {currentReadingPage} of {readingPageCount}</span>
+                  <button className="btn btn-secondary btn-sm" disabled={currentReadingPage >= readingPageCount} onClick={() => setReadingPage(currentReadingPage + 1)}>Next</button>
                 </div>
-                );
-              })}
-            </div>
+              </div>
+            </>
           )}
         </div>
       </div>

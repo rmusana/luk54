@@ -443,6 +443,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .growth-reading-unit { font-size: 11px; font-weight: 600; color: var(--color-text-muted); margin-left: 4px; }
 .growth-reading-meta { display: flex; gap: 10px; font-size: 10px; color: var(--color-text-secondary); flex-wrap: wrap; }
 .growth-reading-meta .u-text-muted { font-weight: 600; }
+.growth-readings-table td { vertical-align: middle; }
+.growth-pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: var(--space-3); font-size: var(--text-xs); color: var(--color-text-secondary); }
+.growth-pager-actions { display: flex; align-items: center; gap: 8px; }
+.growth-pager-page { font-weight: 600; color: var(--color-text); }
 .growth-reading-badges { display: flex; gap: 8px; font-size: 11px; flex-wrap: wrap; }
 .growth-reading-actions { margin-top: auto; display: flex; gap: 6px; justify-content: flex-end; }
 @media (max-width: 480px) {
