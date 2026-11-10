@@ -110,7 +110,18 @@ export function Field({ label, hint, type = 'text', options, required, ...rest }
       ) : type === 'textarea' ? (
         <textarea className="form-textarea" required={required} {...rest} />
       ) : (
-        <input className="form-input" type={type} required={required} {...rest} />
+        <input
+          className="form-input"
+          type={type}
+          required={required}
+          {...rest}
+          onClick={(event) => {
+            if (rest.onClick) rest.onClick(event);
+            if (type === 'date') {
+              try { event.currentTarget.showPicker?.(); } catch (e) {}
+            }
+          }}
+        />
       )}
       {hint && <div className="form-hint">{hint}</div>}
     </div>
