@@ -241,6 +241,10 @@ export function ProductionTrackingSec({ role, setActions }) {
           <span className="btn-icon">{Icon.layers}</span>
           Add block
         </button>
+        <button className="btn btn-secondary btn-sm" onClick={() => setBlockManagerOpen(true)}>
+          <span className="btn-icon">{Icon.sliders}</span>
+          Manage blocks
+        </button>
       </>
     );
   }, [writable, setupError, blocks.length, setActions]);
@@ -648,10 +652,6 @@ export function ProductionTrackingSec({ role, setActions }) {
             </button>
           ))}
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={() => setBlockManagerOpen(true)}>
-          <span className="btn-icon">{Icon.sliders}</span>
-          Manage blocks
-        </button>
       </div>
 
       <div className="card growth-chart-card mb-4">
