@@ -388,6 +388,7 @@ body { margin: 0; font-family: var(--font-sans); background: var(--color-bg); co
 .growth-kpi-icon.is-info { background: var(--color-info-soft); color: var(--color-info); }
 .growth-kpi-icon.is-positive { background: var(--color-positive-soft); color: var(--color-positive); }
 .growth-kpi-foot { font-size: 11px; color: var(--color-text-muted); }
+.growth-kpi-unit { font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--color-text-muted); margin-left: 5px; }
 .growth-flag-banner { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: var(--radius-lg); border: 1px solid rgba(185,28,28,0.22); background: linear-gradient(135deg, var(--color-critical-soft), transparent 70%); }
 [data-theme="dark"] .growth-flag-banner { border-color: rgba(240,113,120,0.28); }
 .growth-flag-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--color-critical-soft); color: var(--color-critical); display: grid; place-items: center; flex-shrink: 0; }

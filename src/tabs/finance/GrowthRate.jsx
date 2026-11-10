@@ -292,7 +292,8 @@ export function GrowthRateSec({ role, setActions }) {
     return series.length ? series[series.length - 1] : null;
   }).filter(Boolean), [blocks, seriesByBlock]);
 
-  const currentEggs = latestReadings.reduce((sum, row) => sum + row.total, 0);
+  const currentTrays = latestReadings.reduce((sum, row) => sum + Number(row.production_trays || 0), 0);
+  const currentUnbundled = latestReadings.reduce((sum, row) => sum + Number(row.unbundled_eggs || 0), 0);
   const latestDate = latestReadings.reduce((latest, row) => (!latest || row.date > latest ? row.date : latest), '');
   const sevenDaysAgo = addDays(todayEAT(), -6);
   const recentFlags = useMemo(() => allSeries
@@ -603,7 +604,7 @@ export function GrowthRateSec({ role, setActions }) {
           </div>
           <div className="growth-hero-stat">
             <span>Current eggs</span>
-            <strong>{formatNumber(currentEggs)}</strong>
+            <strong>{formatNumber(currentTrays, 1)} trays · {formatNumber(currentUnbundled)} eggs</strong>
           </div>
         </div>
       </div>
@@ -614,8 +615,8 @@ export function GrowthRateSec({ role, setActions }) {
             <span className="growth-kpi-icon">{Icon.egg}</span>
             <span className="kpi-label">Current eggs</span>
           </div>
-          <div className="kpi-value">{formatNumber(currentEggs)}</div>
-          <div className="growth-kpi-foot">Latest reading per block</div>
+          <div className="kpi-value">{formatNumber(currentTrays, 1)}<span className="growth-kpi-unit">trays</span></div>
+          <div className="growth-kpi-foot">{formatNumber(currentUnbundled)} unbundled eggs · latest per block</div>
         </div>
         <div className="card kpi-card growth-kpi">
           <div className="growth-kpi-head">
