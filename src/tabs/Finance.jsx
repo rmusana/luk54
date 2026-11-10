@@ -4,7 +4,7 @@ import { financialSummary, isCommercial } from '../lib/finance.js';
 import { useToast } from '../components/ui.jsx';
 import { CapitalSec, ExpensesSec, SummarySec } from './finance/Core.jsx';
 import { AllocationSec, CashflowSec, EquitySec, ProfitSec, RevenueSec } from './finance/Sections.jsx';
-import { GrowthRateSec } from './finance/GrowthRate.jsx';
+import { ProductionTrackingSec } from './finance/ProductionTracking.jsx';
 import { Icon } from '../components/shell.jsx';
 
 const SUBS = [
@@ -15,7 +15,7 @@ const SUBS = [
   { id: 'allocation', label: 'Revenue Allocation', icon: Icon.pieChart, roles: ['admin', 'investment_partner'] },
   { id: 'profit', label: 'Profit Distribution', icon: Icon.trendUp, roles: ['admin', 'investment_partner'] },
   { id: 'equity', label: 'Equity', icon: Icon.layers, roles: ['admin', 'investment_partner'] },
-  { id: 'growth', label: 'Production Tracking', icon: Icon.growth, roles: ['admin', 'investment_partner'] },
+  { id: 'production', label: 'Production Tracking', icon: Icon.growth, roles: ['admin', 'investment_partner'] },
   { id: 'cashflow', label: 'Cash Flow', icon: Icon.wallet, roles: ['admin', 'operating_partner', 'investment_partner'] },
 ];
 
@@ -73,7 +73,7 @@ export default function Finance({ role, setActions }) {
           {activeSub === 'allocation' && <AllocationSec role={role} data={data} setActions={setActions} />}
           {activeSub === 'profit' && <ProfitSec role={role} data={data} setActions={setActions} onChanged={load} />}
           {activeSub === 'equity' && <EquitySec role={role} setActions={setActions} />}
-          {activeSub === 'growth' && <GrowthRateSec role={role} setActions={setActions} />}
+          {activeSub === 'production' && <ProductionTrackingSec role={role} setActions={setActions} />}
           {activeSub === 'cashflow' && <CashflowSec data={data} />}
         </div>
       )}

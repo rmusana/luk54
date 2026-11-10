@@ -37,7 +37,7 @@ export function canWrite(role, resource) {
   if (resource === 'capital' || resource === 'allocation' || resource === 'profit') {
     return role === 'investment_partner';
   }
-  if (resource === 'equity' || resource === 'growth') {
+  if (resource === 'equity' || resource === 'production') {
     return role === 'investment_partner';
   }
   if (resource === 'expenses') return role === 'operating_partner';

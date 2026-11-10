@@ -180,10 +180,10 @@ function buildColorMap(blocks) {
   return map;
 }
 
-export function GrowthRateSec({ role, setActions }) {
+export function ProductionTrackingSec({ role, setActions }) {
   const toast = useToast();
   const confirm = useConfirm();
-  const writable = canWrite(role, 'growth');
+  const writable = canWrite(role, 'production');
   const [blocks, setBlocks] = useState([]);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
