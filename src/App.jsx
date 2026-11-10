@@ -62,7 +62,6 @@ function Shell() {
   }, [session, profile]);
 
   function navigate(to) {
-    setActions(null);
     if (to === 'operations' && profile?.role === 'investment_partner') {
       toast('error', 'Operations is not available to Investment Partners');
       return;
@@ -71,9 +70,11 @@ function Shell() {
       toast('error', 'Alerts are not available to Investment Partners');
       return;
     }
-    if (to === 'finance' || to === 'dashboard' || to === 'operations' || to === 'reports' || to === 'alerts' || to === 'documents' || to === 'ai') setModule(to);
-    else if (to === 'settings' && profile?.role === 'admin') setModule(to);
-    else if (to === 'settings') toast('error', 'Settings is for Administrators');
+    if (to === 'finance' || to === 'dashboard' || to === 'operations' || to === 'reports' || to === 'alerts' || to === 'documents' || to === 'ai') {
+      if (to !== module) { setActions(null); setModule(to); }
+    } else if (to === 'settings' && profile?.role === 'admin') {
+      if (to !== module) { setActions(null); setModule(to); }
+    } else if (to === 'settings') toast('error', 'Settings is for Administrators');
   }
 
   useEffect(() => {

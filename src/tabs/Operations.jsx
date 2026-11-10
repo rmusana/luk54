@@ -33,7 +33,7 @@ export default function Operations({ role, setActions }) {
       <div className="pill-tabs">
         {TABS.map((t) => (
           <button key={t.id} className={'btn btn-sm ' + (t.id === tab ? 'btn-primary' : 'btn-ghost')}
-            onClick={() => { setActions(null); setTab(t.id); }}><span className="btn-icon">{t.icon}</span>{t.label}</button>
+            onClick={() => { if (t.id !== tab) { setActions(null); setTab(t.id); } }}><span className="btn-icon">{t.icon}</span>{t.label}</button>
         ))}
       </div>
       <div key={tab}>

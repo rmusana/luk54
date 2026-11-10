@@ -223,9 +223,13 @@ export function GrowthRateSec({ role, setActions }) {
   }, []);
 
   useEffect(() => {
+    return () => setActions(null);
+  }, [setActions]);
+
+  useEffect(() => {
     if (!writable || setupError) {
       setActions(null);
-      return () => setActions(null);
+      return;
     }
     setActions(
       <>
@@ -239,7 +243,6 @@ export function GrowthRateSec({ role, setActions }) {
         </button>
       </>
     );
-    return () => setActions(null);
   }, [writable, setupError, blocks.length, setActions]);
 
   const colorByBlock = useMemo(() => buildColorMap(blocks), [blocks]);

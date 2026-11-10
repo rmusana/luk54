@@ -61,7 +61,7 @@ export default function Finance({ role, setActions }) {
       <div className="pill-tabs">
         {allowed.map((s) => (
           <button key={s.id} className={'btn btn-sm ' + (s.id === activeSub ? 'btn-primary' : 'btn-ghost')}
-            onClick={() => { setActions(null); setSub(s.id); }}><span className="btn-icon">{s.icon}</span>{s.label}</button>
+            onClick={() => { if (s.id !== activeSub) { setActions(null); setSub(s.id); } }}><span className="btn-icon">{s.icon}</span>{s.label}</button>
         ))}
       </div>
       {loading ? <div className="skeleton" style={{ height: 160 }} /> : (
