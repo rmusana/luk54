@@ -577,7 +577,7 @@ export function ProductionTrackingSec({ role, setActions }) {
             <strong>{latestDate ? formatDate(latestDate) : '—'}</strong>
           </div>
           <div className="growth-hero-stat">
-            <span>Current eggs</span>
+            <span>Cumulative Production</span>
             <strong>{formatNumber(currentTrays)} trays · {formatNumber(currentUnbundled)} eggs</strong>
           </div>
         </div>
@@ -587,7 +587,7 @@ export function ProductionTrackingSec({ role, setActions }) {
         <div className="card kpi-card growth-kpi">
           <div className="growth-kpi-head">
             <span className="growth-kpi-icon">{Icon.egg}</span>
-            <span className="kpi-label">Current eggs</span>
+            <span className="kpi-label">Cumulative Production</span>
           </div>
           <div className="kpi-value">{formatNumber(currentTrays)}<span className="growth-kpi-unit">trays</span></div>
           <div className="growth-kpi-foot">{formatNumber(currentUnbundled)} unbundled eggs · latest per block</div>
