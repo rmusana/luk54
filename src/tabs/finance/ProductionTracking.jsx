@@ -36,15 +36,14 @@ const signedEggs = (value) => {
   return (value > 0 ? '+' : '') + formatNumber(value);
 };
 
-const traySplit = (totalEggs) => {
-  const total = Math.max(0, Math.round(n(totalEggs)));
-  const trays = Math.floor(total / 30);
-  return { trays, eggs: total - trays * 30 };
-};
+const trays = (eggs) => n(eggs) / 30;
 
-const productionLabel = (row) => {
-  const split = traySplit(row.total);
-  return formatNumber(split.trays) + ' trays · ' + formatNumber(split.eggs) + ' eggs';
+const formatTrays = (eggs, digits = 1) => formatNumber(trays(eggs), digits);
+
+const signedTrays = (eggs) => {
+  if (eggs == null) return '—';
+  const value = trays(eggs);
+  return (value > 0 ? '+' : '') + formatNumber(value, 1);
 };
 
 const pctClass = (value) => {
@@ -300,9 +299,6 @@ export function ProductionTrackingSec({ role, setActions }) {
   }).filter(Boolean), [blocks, seriesByBlock]);
 
   const currentEggsTotal = Math.max(0, Math.round(latestReadings.reduce((sum, row) => sum + row.total, 0)));
-  const currentSplit = traySplit(currentEggsTotal);
-  const currentTrays = currentSplit.trays;
-  const currentUnbundled = currentSplit.eggs;
   const latestDate = latestReadings.reduce((latest, row) => (!latest || row.date > latest ? row.date : latest), '');
   const sevenDaysAgo = addDays(todayEAT(), -6);
   const recentFlags = useMemo(() => allSeries
@@ -338,7 +334,7 @@ export function ProductionTrackingSec({ role, setActions }) {
           label: block.name,
           data: labels.map((date) => {
             const row = byDate.get(date);
-            return row ? traySplit(row.total).trays : null;
+            return row ? trays(row.total) : null;
           }),
           borderColor: colorByBlock[block.id],
           backgroundColor: colorByBlock[block.id] + '18',
@@ -362,7 +358,7 @@ export function ProductionTrackingSec({ role, setActions }) {
       datasets = [
         {
           label: 'Trays',
-          data: series.map((row) => traySplit(row.total).trays),
+          data: series.map((row) => trays(row.total)),
           borderColor: accent,
           backgroundColor: gradient,
           fill: true,
@@ -390,7 +386,7 @@ export function ProductionTrackingSec({ role, setActions }) {
         beginAtZero: true,
         title: { display: true, text: 'Production in trays' },
         grid: { color: css('--color-border') || '#26332e' },
-        ticks: { precision: 0 },
+        ticks: { precision: 1 },
       },
       x: {
         grid: { display: false },
@@ -441,16 +437,7 @@ export function ProductionTrackingSec({ role, setActions }) {
                 if (item.dataset.yAxisID === 'y1') {
                   return item.dataset.label + ': ' + (item.parsed.y == null ? '—' : signedPct(item.parsed.y));
                 }
-                const date = labels[item.dataIndex];
-                let row = null;
-                if (activeBlock === 'all') {
-                  const block = blocks.find((b) => b.name === item.dataset.label);
-                  row = block ? (seriesByBlock[block.id] || []).find((r) => r.date === date) : null;
-                } else {
-                  row = (seriesByBlock[activeBlock] || []).find((r) => r.date === date);
-                }
-                if (!row) return item.dataset.label + ': —';
-                return item.dataset.label + ': ' + productionLabel(row);
+                return item.dataset.label + ': ' + (item.parsed.y == null ? '—' : formatNumber(item.parsed.y, 1) + ' trays');
               },
             },
           },
@@ -583,7 +570,7 @@ export function ProductionTrackingSec({ role, setActions }) {
           </div>
           <div className="growth-hero-stat">
             <span>Cumulative Production</span>
-            <strong>{formatNumber(currentTrays)} trays · {formatNumber(currentUnbundled)} eggs</strong>
+            <strong>{formatTrays(currentEggsTotal)} trays</strong>
           </div>
         </div>
       </div>
@@ -594,8 +581,8 @@ export function ProductionTrackingSec({ role, setActions }) {
             <span className="growth-kpi-icon">{Icon.egg}</span>
             <span className="kpi-label">Cumulative Production</span>
           </div>
-          <div className="kpi-value">{formatNumber(currentTrays)}<span className="growth-kpi-unit">trays</span></div>
-          <div className="growth-kpi-foot">{formatNumber(currentUnbundled)} unbundled eggs · latest per block</div>
+          <div className="kpi-value">{formatTrays(currentEggsTotal)}<span className="growth-kpi-unit">trays</span></div>
+          <div className="growth-kpi-foot">Latest reading per block</div>
         </div>
         <div className="card kpi-card growth-kpi">
           <div className="growth-kpi-head">
@@ -660,7 +647,7 @@ export function ProductionTrackingSec({ role, setActions }) {
             <span className="growth-card-icon">{Icon.activity}</span>
             <div>
               <h3>Production Trend</h3>
-              <p>{activeBlock === 'all' ? 'Trays by block across recorded days, with loose eggs in the tooltip.' : 'Trays and cumulative growth from the first reading, with loose eggs in the tooltip.'}</p>
+              <p>{activeBlock === 'all' ? 'Trays by block across recorded days.' : 'Trays and cumulative growth from the first reading.'}</p>
             </div>
           </div>
           {activeBlock !== 'all' && <Badge tone="info">Cumulative from baseline</Badge>}
@@ -682,7 +669,7 @@ export function ProductionTrackingSec({ role, setActions }) {
             <span className="growth-card-icon">{Icon.egg}</span>
             <div>
               <h3>Daily readings</h3>
-              <p>Production, unbundled eggs and daily movement.</p>
+              <p>Production in trays and daily movement.</p>
             </div>
           </div>
           <Badge tone="neutral">{displayEntries.length} {displayEntries.length === 1 ? 'entry' : 'entries'}</Badge>
@@ -693,7 +680,6 @@ export function ProductionTrackingSec({ role, setActions }) {
           ) : (
             <div className="growth-readings-grid">
               {displayEntries.map((row) => {
-                const split = traySplit(row.total);
                 return (
                 <div key={row.id} className="growth-reading-card">
                   <div className="growth-reading-header">
@@ -703,11 +689,9 @@ export function ProductionTrackingSec({ role, setActions }) {
                       {row.blockName}
                     </span>
                   </div>
-                  <div className="growth-reading-total">{formatNumber(row.total)}</div>
+                  <div className="growth-reading-total">{formatTrays(row.total)}<span className="growth-reading-unit">trays</span></div>
                   <div className="growth-reading-meta">
-                    <span>{formatNumber(split.trays)} <span className="u-text-muted">trays</span></span>
-                    <span>{formatNumber(split.eggs)} <span className="u-text-muted">unbundled</span></span>
-                    <span className={pctClass(row.eggDelta)}>{signedEggs(row.eggDelta)}</span>
+                    <span className={pctClass(row.eggDelta)}>{signedTrays(row.eggDelta)} <span className="u-text-muted">trays</span></span>
                   </div>
                   <div className="growth-reading-badges">
                     <span className={'growth-badge ' + pctClass(row.dailyPct)}>
@@ -750,7 +734,6 @@ export function ProductionTrackingSec({ role, setActions }) {
           ) : (
             <div className="growth-weekly-grid">
               {weeklyRows.map((row) => {
-                const split = traySplit(row.closing);
                 const statusMeta = weekStatusMeta(row.status);
                 return (
                   <div key={row.id} className="growth-weekly-card">
@@ -762,13 +745,11 @@ export function ProductionTrackingSec({ role, setActions }) {
                       </span>
                     </div>
                     <div className="growth-weekly-total">
-                      <span className="growth-weekly-value">{formatNumber(row.closing)}</span>
-                      <span className="growth-weekly-unit">closing eggs</span>
+                      <span className="growth-weekly-value">{formatTrays(row.closing)}</span>
+                      <span className="growth-weekly-unit">closing trays</span>
                     </div>
                     <div className="growth-weekly-meta">
-                      <span>{formatNumber(split.trays)} <span className="u-text-muted">trays</span></span>
-                      <span>{formatNumber(split.eggs)} <span className="u-text-muted">unbundled</span></span>
-                      <span>Opening {formatNumber(row.opening)}</span>
+                      <span>Opening {formatTrays(row.opening)} trays</span>
                     </div>
                     <div className="growth-weekly-badges">
                       <span className={'growth-weekly-delta ' + pctClass(row.netPct)}>Week net {signedPct(row.netPct)}</span>

@@ -440,6 +440,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .growth-reading-header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 11px; color: var(--color-text-secondary); }
 .growth-reading-block { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--color-text); }
 .growth-reading-total { font-size: 22px; font-weight: 800; color: var(--color-text); letter-spacing: -0.02em; }
+.growth-reading-unit { font-size: 11px; font-weight: 600; color: var(--color-text-muted); margin-left: 4px; }
 .growth-reading-meta { display: flex; gap: 10px; font-size: 10px; color: var(--color-text-secondary); flex-wrap: wrap; }
 .growth-reading-meta .u-text-muted { font-weight: 600; }
 .growth-reading-badges { display: flex; gap: 8px; font-size: 11px; flex-wrap: wrap; }
