@@ -569,7 +569,7 @@ export function ProductionTrackingSec({ role, setActions }) {
           <div>
             <div className="growth-eyebrow">Production analytics</div>
             <h2>Production Tracking</h2>
-            <p>Daily egg production progression by block, with weekly movement and decrement flags.</p>
+            <p>Daily egg production trend by block, with weekly movement and decrement flags.</p>
           </div>
         </div>
         <div className="growth-hero-side">
@@ -659,7 +659,7 @@ export function ProductionTrackingSec({ role, setActions }) {
           <div className="growth-card-title">
             <span className="growth-card-icon">{Icon.activity}</span>
             <div>
-              <h3>Progression</h3>
+              <h3>Production Trend</h3>
               <p>{activeBlock === 'all' ? 'Trays by block across recorded days, with loose eggs in the tooltip.' : 'Trays and cumulative growth from the first reading, with loose eggs in the tooltip.'}</p>
             </div>
           </div>
@@ -671,7 +671,7 @@ export function ProductionTrackingSec({ role, setActions }) {
               <canvas ref={chartRef} />
             </div>
           ) : (
-            <EmptyState title="No chart data yet" desc="Add a daily reading to see the progression." />
+            <EmptyState title="No chart data yet" desc="Add a daily reading to see the production trend." />
           )}
         </div>
       </div>
