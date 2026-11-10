@@ -428,6 +428,22 @@ body { margin: 0; font-family: var(--font-sans); background: var(--color-bg); co
   .growth-reading-total { font-size: 18px; }
   .growth-reading-actions { justify-content: center; }
 }
+.growth-weekly-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.growth-weekly-card { border: 1px solid var(--color-border); border-radius: 10px; padding: 14px 16px; background: var(--color-bg-elevated); display: flex; flex-direction: column; gap: 10px; }
+.growth-weekly-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.growth-weekly-range { font-size: 12px; font-weight: 700; color: var(--color-text); }
+.growth-weekly-block { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--color-text-secondary); }
+.growth-weekly-total { display: flex; align-items: baseline; gap: 6px; }
+.growth-weekly-value { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: var(--color-text); }
+.growth-weekly-unit { font-size: 11px; font-weight: 600; color: var(--color-text-muted); }
+.growth-weekly-meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 10px; color: var(--color-text-secondary); }
+.growth-weekly-meta .u-text-muted { font-weight: 600; }
+.growth-weekly-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 11px; }
+.growth-weekly-delta { display: inline-flex; align-items: center; gap: 4px; }
+@media (max-width: 480px) {
+  .growth-weekly-card { padding: 12px; }
+  .growth-weekly-value { font-size: 20px; }
+}
 .growth-block-tag { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12px; }
 .growth-strong { font-weight: 700; }
 .growth-up { color: var(--color-positive); font-weight: 600; }

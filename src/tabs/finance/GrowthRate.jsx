@@ -285,6 +285,8 @@ export function GrowthRateSec({ role, setActions }) {
     });
   }, [blocks, seriesByBlock, colorByBlock, activeBlock]);
 
+  const weeklyWeekCount = new Set(weeklyRows.map((row) => row.weekStart)).size;
+
   const latestReadings = useMemo(() => blocks.map((block) => {
     const series = seriesByBlock[block.id] || [];
     return series.length ? series[series.length - 1] : null;
@@ -505,32 +507,6 @@ export function GrowthRateSec({ role, setActions }) {
     await load();
     if (saved && saved.id) setSelectedBlock(saved.id);
   }
-
-  const weeklyColumns = [
-    { key: 'week', label: 'Week', accessor: (row) => <span className="growth-strong">{row.weekLabel}</span> },
-    {
-      key: 'block',
-      label: 'Block',
-      accessor: (row) => (
-        <span className="growth-block-tag">
-          <span className="growth-block-dot" style={{ background: row.blockColor }} />
-          {row.blockName}
-        </span>
-      ),
-    },
-    { key: 'opening', label: 'Opening', accessor: (row) => formatNumber(row.opening) },
-    { key: 'closing', label: 'Closing', accessor: (row) => <span className="growth-strong">{formatNumber(row.closing)}</span> },
-    { key: 'netPct', label: 'Week net', accessor: (row) => <span className={pctClass(row.netPct)}>{signedPct(row.netPct)}</span> },
-    { key: 'wow', label: 'Week over week', accessor: (row) => <span className={pctClass(row.wowPct)}>{signedPct(row.wowPct)}</span> },
-    {
-      key: 'status',
-      label: 'Status',
-      accessor: (row) => {
-        const meta = weekStatusMeta(row.status);
-        return <Badge tone={meta.tone}><span className="growth-badge">{meta.icon}{meta.label}</span></Badge>;
-      },
-    },
-  ];
 
   if (loading) {
     return (
@@ -759,12 +735,48 @@ export function GrowthRateSec({ role, setActions }) {
             <span className="growth-card-icon">{Icon.calendar}</span>
             <div>
               <h3>Weekly totals</h3>
-              <p>Monday to Sunday, measured from the week open and the previous week close.</p>
+              <p>Monday to Sunday, with closing totals and week-over-week movement.</p>
             </div>
           </div>
-          <Badge tone="neutral">{weeklyRows.length} {weeklyRows.length === 1 ? 'week' : 'weeks'}</Badge>
+          <Badge tone="neutral">{weeklyWeekCount} {weeklyWeekCount === 1 ? 'week' : 'weeks'}</Badge>
         </div>
-        <DataTable columns={weeklyColumns} rows={weeklyRows} emptyMessage="Weekly totals appear once readings are recorded." />
+        <div className="card-body">
+          {weeklyRows.length === 0 ? (
+            <EmptyState title="No weekly totals yet" desc="Weekly totals appear once readings are recorded." />
+          ) : (
+            <div className="growth-weekly-grid">
+              {weeklyRows.map((row) => {
+                const split = traySplit(row.closing);
+                const statusMeta = weekStatusMeta(row.status);
+                return (
+                  <div key={row.id} className="growth-weekly-card">
+                    <div className="growth-weekly-header">
+                      <span className="growth-weekly-range">{row.weekLabel}</span>
+                      <span className="growth-weekly-block">
+                        <span className="growth-block-dot" style={{ background: row.blockColor }} />
+                        {row.blockName}
+                      </span>
+                    </div>
+                    <div className="growth-weekly-total">
+                      <span className="growth-weekly-value">{formatNumber(row.closing)}</span>
+                      <span className="growth-weekly-unit">closing eggs</span>
+                    </div>
+                    <div className="growth-weekly-meta">
+                      <span>{formatNumber(split.trays)} <span className="u-text-muted">trays</span></span>
+                      <span>{formatNumber(split.eggs)} <span className="u-text-muted">unbundled</span></span>
+                      <span>Opening {formatNumber(row.opening)}</span>
+                    </div>
+                    <div className="growth-weekly-badges">
+                      <span className={'growth-weekly-delta ' + pctClass(row.netPct)}>Week net {signedPct(row.netPct)}</span>
+                      <span className={'growth-weekly-delta ' + pctClass(row.wowPct)}>WoW {signedPct(row.wowPct)}</span>
+                      <Badge tone={statusMeta.tone}><span className="growth-badge">{statusMeta.icon}{statusMeta.label}</span></Badge>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {entryForm.open && (
