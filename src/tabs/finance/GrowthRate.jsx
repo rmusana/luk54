@@ -36,10 +36,15 @@ const signedEggs = (value) => {
   return (value > 0 ? '+' : '') + formatNumber(value);
 };
 
+const traySplit = (totalEggs) => {
+  const total = Math.max(0, Math.round(n(totalEggs)));
+  const trays = Math.floor(total / 30);
+  return { trays, eggs: total - trays * 30 };
+};
+
 const productionLabel = (row) => {
-  const trays = formatNumber(row.production_trays, 1);
-  const eggs = formatNumber(row.unbundled_eggs);
-  return trays + ' trays · ' + eggs + ' eggs';
+  const split = traySplit(row.total);
+  return formatNumber(split.trays) + ' trays · ' + formatNumber(split.eggs) + ' eggs';
 };
 
 const pctClass = (value) => {
@@ -292,8 +297,10 @@ export function GrowthRateSec({ role, setActions }) {
     return series.length ? series[series.length - 1] : null;
   }).filter(Boolean), [blocks, seriesByBlock]);
 
-  const currentTrays = latestReadings.reduce((sum, row) => sum + Number(row.production_trays || 0), 0);
-  const currentUnbundled = latestReadings.reduce((sum, row) => sum + Number(row.unbundled_eggs || 0), 0);
+  const currentEggsTotal = Math.max(0, Math.round(latestReadings.reduce((sum, row) => sum + row.total, 0)));
+  const currentSplit = traySplit(currentEggsTotal);
+  const currentTrays = currentSplit.trays;
+  const currentUnbundled = currentSplit.eggs;
   const latestDate = latestReadings.reduce((latest, row) => (!latest || row.date > latest ? row.date : latest), '');
   const sevenDaysAgo = addDays(todayEAT(), -6);
   const recentFlags = useMemo(() => allSeries
@@ -329,7 +336,7 @@ export function GrowthRateSec({ role, setActions }) {
           label: block.name,
           data: labels.map((date) => {
             const row = byDate.get(date);
-            return row ? row.production_trays : null;
+            return row ? traySplit(row.total).trays : null;
           }),
           borderColor: colorByBlock[block.id],
           backgroundColor: colorByBlock[block.id] + '18',
@@ -353,7 +360,7 @@ export function GrowthRateSec({ role, setActions }) {
       datasets = [
         {
           label: 'Trays',
-          data: series.map((row) => row.production_trays),
+          data: series.map((row) => traySplit(row.total).trays),
           borderColor: accent,
           backgroundColor: gradient,
           fill: true,
@@ -604,7 +611,7 @@ export function GrowthRateSec({ role, setActions }) {
           </div>
           <div className="growth-hero-stat">
             <span>Current eggs</span>
-            <strong>{formatNumber(currentTrays, 1)} trays · {formatNumber(currentUnbundled)} eggs</strong>
+            <strong>{formatNumber(currentTrays)} trays · {formatNumber(currentUnbundled)} eggs</strong>
           </div>
         </div>
       </div>
@@ -615,7 +622,7 @@ export function GrowthRateSec({ role, setActions }) {
             <span className="growth-kpi-icon">{Icon.egg}</span>
             <span className="kpi-label">Current eggs</span>
           </div>
-          <div className="kpi-value">{formatNumber(currentTrays, 1)}<span className="growth-kpi-unit">trays</span></div>
+          <div className="kpi-value">{formatNumber(currentTrays)}<span className="growth-kpi-unit">trays</span></div>
           <div className="growth-kpi-foot">{formatNumber(currentUnbundled)} unbundled eggs · latest per block</div>
         </div>
         <div className="card kpi-card growth-kpi">
@@ -717,7 +724,9 @@ export function GrowthRateSec({ role, setActions }) {
             <EmptyState title="No growth entries yet" desc="Add the first daily reading to see daily movement." />
           ) : (
             <div className="growth-readings-grid">
-              {displayEntries.map((row) => (
+              {displayEntries.map((row) => {
+                const split = traySplit(row.total);
+                return (
                 <div key={row.id} className="growth-reading-card">
                   <div className="growth-reading-header">
                     <span className="growth-reading-date">{formatDate(row.date)}</span>
@@ -728,8 +737,8 @@ export function GrowthRateSec({ role, setActions }) {
                   </div>
                   <div className="growth-reading-total">{formatNumber(row.total)}</div>
                   <div className="growth-reading-meta">
-                    <span>{formatNumber(row.production_trays, 1)} <span className="u-text-muted">trays</span></span>
-                    <span>{formatNumber(row.unbundled_eggs)} <span className="u-text-muted">unbundled</span></span>
+                    <span>{formatNumber(split.trays)} <span className="u-text-muted">trays</span></span>
+                    <span>{formatNumber(split.eggs)} <span className="u-text-muted">unbundled</span></span>
                     <span className={pctClass(row.eggDelta)}>{signedEggs(row.eggDelta)}</span>
                   </div>
                   <div className="growth-reading-badges">
@@ -749,7 +758,8 @@ export function GrowthRateSec({ role, setActions }) {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
