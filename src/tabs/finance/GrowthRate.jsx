@@ -205,7 +205,7 @@ export function GrowthRateSec({ role, setActions }) {
     const error = blockRes.error || entryRes.error;
     if (error) {
       if (error.code === '42P01' || /does not exist/i.test(error.message || '')) {
-        setSetupError('Growth Rate tables are not initialized. Apply supabase/migrations/010_growth_rate.sql.');
+        setSetupError('Production Tracking tables are not initialized. Apply supabase/migrations/010_growth_rate.sql.');
       } else {
         toast('error', error.message);
       }
@@ -463,7 +463,7 @@ export function GrowthRateSec({ role, setActions }) {
 
   async function handleDeleteEntry(row) {
     const ok = await confirm({
-      title: 'Delete growth entry',
+      title: 'Delete production entry',
       message: 'Delete the ' + row.blockName + ' reading for ' + formatDate(row.date) + '? This cannot be undone.',
       confirmLabel: 'Delete',
       danger: true,
@@ -474,14 +474,14 @@ export function GrowthRateSec({ role, setActions }) {
       toast('error', error.message);
       return;
     }
-    audit('DELETE', 'growth_rate_entries', row.id, 'Deleted ' + row.blockName + ' growth entry ' + row.date);
-    toast('success', 'Growth entry deleted');
+    audit('DELETE', 'growth_rate_entries', row.id, 'Deleted ' + row.blockName + ' production entry ' + row.date);
+    toast('success', 'Production entry deleted');
     load();
   }
 
   async function handleDeleteBlock(block) {
     const count = entryCounts[block.id] || 0;
-    const detail = count ? ' and its ' + count + ' growth ' + (count === 1 ? 'entry' : 'entries') : '';
+    const detail = count ? ' and its ' + count + ' production ' + (count === 1 ? 'entry' : 'entries') : '';
     const ok = await confirm({
       title: 'Delete block',
       message: 'Delete block ' + block.name + detail + '? This cannot be undone.',
@@ -494,7 +494,7 @@ export function GrowthRateSec({ role, setActions }) {
       toast('error', error.message);
       return;
     }
-    audit('DELETE', 'growth_blocks', block.id, 'Deleted growth block ' + block.name);
+    audit('DELETE', 'growth_blocks', block.id, 'Deleted production block ' + block.name);
     if (activeBlock === block.id) setSelectedBlock('all');
     toast('success', 'Block deleted');
     load();
@@ -529,7 +529,7 @@ export function GrowthRateSec({ role, setActions }) {
         <div className="growth-card-title">
           <span className="growth-card-icon" style={{ background: 'var(--color-critical-soft)', color: 'var(--color-critical)' }}>{Icon.warn}</span>
           <div>
-            <h3 style={{ margin: 0 }}>Growth Rate setup required</h3>
+            <h3 style={{ margin: 0 }}>Production Tracking setup required</h3>
             <p className="u-text-sm u-text-secondary" style={{ margin: '4px 0 0' }}>{setupError}</p>
           </div>
         </div>
@@ -543,7 +543,7 @@ export function GrowthRateSec({ role, setActions }) {
         <div className="card growth-empty-card">
           <EmptyState
             title="No blocks yet"
-            desc="Add a block to start recording daily growth."
+            desc="Add a block to start recording daily production."
             actionLabel={writable ? 'Add block' : undefined}
             onAction={writable ? () => setBlockForm({ open: true, block: null }) : undefined}
           />
@@ -567,7 +567,7 @@ export function GrowthRateSec({ role, setActions }) {
           <div className="growth-hero-icon">{Icon.growth}</div>
           <div>
             <div className="growth-eyebrow">Production analytics</div>
-            <h2>Growth Rate</h2>
+            <h2>Production Tracking</h2>
             <p>Daily egg production progression by block, with weekly movement and decrement flags.</p>
           </div>
         </div>
@@ -688,7 +688,7 @@ export function GrowthRateSec({ role, setActions }) {
         </div>
         <div className="card-body">
           {displayEntries.length === 0 ? (
-            <EmptyState title="No growth entries yet" desc="Add the first daily reading to see daily movement." />
+            <EmptyState title="No production entries yet" desc="Add the first daily reading to see daily movement." />
           ) : (
             <div className="growth-readings-grid">
               {displayEntries.map((row) => {
@@ -885,14 +885,14 @@ function EntryForm({ entry, blocks, defaultBlockId, seriesByBlock, onClose, onSa
       }
       return;
     }
-    audit(entry ? 'UPDATE' : 'CREATE', 'growth_rate_entries', (res.data && res.data.id) || (entry && entry.id), (entry ? 'Updated' : 'Added') + ' growth entry ' + blockName + ' ' + f.date);
-    toast('success', entry ? 'Growth entry updated' : 'Growth entry added');
+    audit(entry ? 'UPDATE' : 'CREATE', 'growth_rate_entries', (res.data && res.data.id) || (entry && entry.id), (entry ? 'Updated' : 'Added') + ' production entry ' + blockName + ' ' + f.date);
+    toast('success', entry ? 'Production entry updated' : 'Production entry added');
     onSaved();
   }
 
   return (
     <Modal
-      title={entry ? 'Edit growth entry' : 'Add growth entry'}
+      title={entry ? 'Edit production entry' : 'Add production entry'}
       onClose={onClose}
       footer={(
         <>
@@ -928,7 +928,7 @@ function EntryForm({ entry, blocks, defaultBlockId, seriesByBlock, onClose, onSa
           <strong className={pctClass(eggDelta)}>{signedEggs(eggDelta)}</strong>
         </div>
         <div className="growth-preview-item">
-          <span>Daily growth</span>
+          <span>Daily change</span>
           <strong className={pctClass(dailyPct)}>{dailyPct == null ? '—' : signedPct(dailyPct)}</strong>
         </div>
         <div className="growth-preview-note">
@@ -976,7 +976,7 @@ function BlockForm({ block, blocks, onClose, onSaved }) {
       }
       return;
     }
-    audit(block ? 'UPDATE' : 'CREATE', 'growth_blocks', (res.data && res.data.id) || (block && block.id), block ? 'Renamed growth block ' + block.name + ' to ' + clean : 'Added growth block ' + clean);
+    audit(block ? 'UPDATE' : 'CREATE', 'growth_blocks', (res.data && res.data.id) || (block && block.id), block ? 'Renamed production block ' + block.name + ' to ' + clean : 'Added production block ' + clean);
     toast('success', block ? 'Block renamed' : 'Block added');
     onSaved(res.data);
   }

@@ -15,7 +15,7 @@ const SUBS = [
   { id: 'allocation', label: 'Revenue Allocation', icon: Icon.pieChart, roles: ['admin', 'investment_partner'] },
   { id: 'profit', label: 'Profit Distribution', icon: Icon.trendUp, roles: ['admin', 'investment_partner'] },
   { id: 'equity', label: 'Equity', icon: Icon.layers, roles: ['admin', 'investment_partner'] },
-  { id: 'growth', label: 'Growth Rate', icon: Icon.growth, roles: ['admin', 'investment_partner'] },
+  { id: 'growth', label: 'Production Tracking', icon: Icon.growth, roles: ['admin', 'investment_partner'] },
   { id: 'cashflow', label: 'Cash Flow', icon: Icon.wallet, roles: ['admin', 'operating_partner', 'investment_partner'] },
 ];
 
