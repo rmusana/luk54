@@ -78,12 +78,14 @@ function buildSeries(rows) {
   const sorted = [...rows].sort((a, b) => dateKey(a.date).localeCompare(dateKey(b.date)));
   let firstTotal = null;
   let previousTotal = null;
-  return sorted.map((row) => {
+  return sorted.map((row, index) => {
     const total = totalEggs(row);
     const hasPrevious = previousTotal != null;
     const eggDelta = hasPrevious ? total - previousTotal : null;
     const dailyPct = hasPrevious ? pctChange(total, previousTotal) : null;
     const cumulativePct = firstTotal != null ? pctChange(total, firstTotal) : null;
+    // Percentage increment after every other day: compare to the reading two entries back.
+    const everyOtherDayPct = index >= 2 ? pctChange(total, totalEggs(sorted[index - 2])) : null;
     if (firstTotal == null) firstTotal = total;
     const result = {
       ...row,
@@ -92,6 +94,7 @@ function buildSeries(rows) {
       eggDelta,
       dailyPct,
       cumulativePct,
+      everyOtherDayPct,
       hasPrevious,
       isDecrement: dailyPct != null && dailyPct < 0,
       isIncrement: dailyPct != null && dailyPct > 0,
@@ -523,6 +526,16 @@ export function GrowthRateSec({ role, setActions }) {
       ),
     },
     {
+      key: 'everyOtherDay',
+      label: 'Every other day %',
+      accessor: (row) => (
+        <span className={'growth-badge ' + pctClass(row.everyOtherDayPct)}>
+          {trendIcon(row.everyOtherDayPct)}
+          {row.everyOtherDayPct == null ? '—' : signedPct(row.everyOtherDayPct)}
+        </span>
+      ),
+    },
+    {
       key: 'cumulative',
       label: 'Progression',
       accessor: (row) => {
@@ -846,6 +859,11 @@ function EntryForm({ entry, blocks, defaultBlockId, seriesByBlock, onClose, onSa
   const previousTotal = previous ? previous.total : null;
   const eggDelta = previousTotal != null ? total - previousTotal : null;
   const dailyPct = previousTotal != null ? pctChange(total, previousTotal) : null;
+  const previousPrevious = [...series]
+    .filter((row) => row.id !== (entry && entry.id) && row.date < f.date)
+    .sort((a, b) => b.date.localeCompare(a.date))[1];
+  const previousPreviousTotal = previousPrevious ? previousPrevious.total : null;
+  const everyOtherDayPct = previousPreviousTotal != null ? pctChange(total, previousPreviousTotal) : null;
   const blockName = (blocks.find((block) => block.id === f.block_id) || {}).name || '';
 
   async function save() {
@@ -933,6 +951,10 @@ function EntryForm({ entry, blocks, defaultBlockId, seriesByBlock, onClose, onSa
         <div className="growth-preview-item">
           <span>Daily growth</span>
           <strong className={pctClass(dailyPct)}>{dailyPct == null ? '—' : signedPct(dailyPct)}</strong>
+        </div>
+        <div className="growth-preview-item">
+          <span>Every other day</span>
+          <strong className={pctClass(everyOtherDayPct)}>{everyOtherDayPct == null ? '—' : signedPct(everyOtherDayPct)}</strong>
         </div>
         <div className="growth-preview-note">
           {previous
