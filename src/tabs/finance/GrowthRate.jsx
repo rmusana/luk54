@@ -36,6 +36,12 @@ const signedEggs = (value) => {
   return (value > 0 ? '+' : '') + formatNumber(value);
 };
 
+const productionLabel = (row) => {
+  const trays = formatNumber(row.production_trays, 1);
+  const eggs = formatNumber(row.unbundled_eggs);
+  return trays + ' trays · ' + eggs + ' eggs';
+};
+
 const pctClass = (value) => {
   if (value == null) return 'growth-flat';
   return value > 0 ? 'growth-up' : value < 0 ? 'growth-down' : 'growth-flat';
@@ -317,10 +323,13 @@ export function GrowthRateSec({ role, setActions }) {
       blocks.forEach((block) => (seriesByBlock[block.id] || []).forEach((row) => dateSet.add(row.date)));
       labels = [...dateSet].sort();
       datasets = blocks.filter((block) => (seriesByBlock[block.id] || []).length).map((block) => {
-        const byDate = new Map((seriesByBlock[block.id] || []).map((row) => [row.date, row.total]));
+        const byDate = new Map((seriesByBlock[block.id] || []).map((row) => [row.date, row]));
         return {
           label: block.name,
-          data: labels.map((date) => (byDate.has(date) ? byDate.get(date) : null)),
+          data: labels.map((date) => {
+            const row = byDate.get(date);
+            return row ? row.production_trays : null;
+          }),
           borderColor: colorByBlock[block.id],
           backgroundColor: colorByBlock[block.id] + '18',
           fill: false,
@@ -342,8 +351,8 @@ export function GrowthRateSec({ role, setActions }) {
       gradient.addColorStop(1, accent + '00');
       datasets = [
         {
-          label: 'Eggs',
-          data: series.map((row) => row.total),
+          label: 'Trays',
+          data: series.map((row) => row.production_trays),
           borderColor: accent,
           backgroundColor: gradient,
           fill: true,
@@ -369,7 +378,7 @@ export function GrowthRateSec({ role, setActions }) {
     const scales = {
       y: {
         beginAtZero: true,
-        title: { display: true, text: 'Eggs' },
+        title: { display: true, text: 'Trays' },
         grid: { color: css('--color-border') || '#26332e' },
         ticks: { precision: 0 },
       },
@@ -421,7 +430,16 @@ export function GrowthRateSec({ role, setActions }) {
                 if (item.dataset.yAxisID === 'y1') {
                   return item.dataset.label + ': ' + (item.parsed.y == null ? '—' : signedPct(item.parsed.y));
                 }
-                return item.dataset.label + ': ' + (item.parsed.y == null ? '—' : formatNumber(item.parsed.y) + ' eggs');
+                const date = labels[item.dataIndex];
+                let row = null;
+                if (activeBlock === 'all') {
+                  const block = blocks.find((b) => b.name === item.dataset.label);
+                  row = block ? (seriesByBlock[block.id] || []).find((r) => r.date === date) : null;
+                } else {
+                  row = (seriesByBlock[activeBlock] || []).find((r) => r.date === date);
+                }
+                if (!row) return item.dataset.label + ': —';
+                return item.dataset.label + ': ' + productionLabel(row);
               },
             },
           },
@@ -666,7 +684,7 @@ export function GrowthRateSec({ role, setActions }) {
             <span className="growth-card-icon">{Icon.activity}</span>
             <div>
               <h3>Progression</h3>
-              <p>{activeBlock === 'all' ? 'Egg totals by block across recorded days.' : 'Egg totals and cumulative growth from the first reading.'}</p>
+              <p>{activeBlock === 'all' ? 'Trays by block across recorded days, with loose eggs in the tooltip.' : 'Trays and cumulative growth from the first reading, with loose eggs in the tooltip.'}</p>
             </div>
           </div>
           {activeBlock !== 'all' && <Badge tone="info">Cumulative from baseline</Badge>}
